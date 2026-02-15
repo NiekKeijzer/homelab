@@ -44,3 +44,10 @@
         - mrrobot
       docker_install_compose_plugin: true
       docker_restart_handler_state: restarted
+
+    - role: stacks 
+      docker_stacks: 
+        - network
+        - monitoring
+      tags: 
+        - stacks
