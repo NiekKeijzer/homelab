@@ -47,6 +47,7 @@
 
     - role: stacks 
       docker_stacks: 
+        - infra
         - network
         - monitoring
       tags: 

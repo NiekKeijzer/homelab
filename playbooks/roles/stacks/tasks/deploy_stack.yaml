@@ -36,8 +36,9 @@
       when: 
         - compose.secrets is defined
 
+# TODO: Check if stack is already deployed and only redeploy if there are changes
 - name: "{{ stack_name }} | Deploy stack using Docker Compose"
   community.docker.docker_compose_v2:
     project_src: "{{ stack_vm_dir }}"
     state: present
-    recreate: "always" 
+    recreate: "always"
