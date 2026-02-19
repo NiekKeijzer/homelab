@@ -1,0 +1,82 @@
+networks:
+  proxy:
+    external: true
+  infra:
+    external: true
+  authentik:
+    driver: bridge 
+
+secrets:
+  authentik_secret_key:
+    file: ./secrets/authentik_secret_key
+  authentik_postgres_db:
+    file: ./secrets/authentik_postgres_db
+  authentik_postgres_user:
+    file: ./secrets/authentik_postgres_user
+  authentik_postgres_password:
+    file: ./secrets/authentik_postgres_password
+
+services: 
+  authentik_server: 
+    image: authentik/server:2025.12
+    restart: unless-stopped
+    command: server
+    volumes: 
+      - /etc/localtime:/etc/localtime:ro
+      - ./config/authentik/templates:/templates:ro
+      - ./data/authentik/data:/data:rw
+    networks: 
+      - proxy
+      - infra
+      - authentik
+    ports:
+      - 9000:9000
+    secrets: 
+      - authentik_secret_key
+      - authentik_postgres_db
+      - authentik_postgres_user
+      - authentik_postgres_password
+    environment:
+      - AUTHENTIK_POSTGRESQL__HOST=postgres
+      - AUTHENTIK_POSTGRESQL__NAME=authentik
+      - AUTHENTIK_POSTGRESQL__USER=file:///run/secrets/authentik_postgres_user
+      - AUTHENTIK_POSTGRESQL__PASSWORD=file:///run/secrets/authentik_postgres_password
+      - AUTHENTIK_SECRET_KEY=file:///run/secrets/authentik_secret_key
+      - AUTHENTIK_HOST=http://auth.svc.burrow.casa
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.rule=Host(`auth.svc.burrow.casa`)"
+      - "traefik.http.routers.authentik.entrypoints=websecure"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+    healthcheck:
+      test: [ "CMD", "curl", "-v", "http://localhost:9000/healthz" ]
+      interval: 30s
+      retries: 5
+      start_period: 10s
+      timeout: 5s 
+
+  authentik_worker: 
+    image: authentik/server:2025.12
+    restart: unless-stopped
+    command: worker
+    volumes: 
+      - /etc/localtime:/etc/localtime:ro
+      - ./config/authentik/templates:/templates:ro
+      - ./data/authentik/data:/data:rw
+      - ./data/authentik/certs:/certs:ro
+    secrets: 
+      - authentik_secret_key
+      - authentik_postgres_db
+      - authentik_postgres_user
+      - authentik_postgres_password
+    environment:
+      - AUTHENTIK_POSTGRESQL__HOST=postgres
+      - AUTHENTIK_POSTGRESQL__NAME=authentik
+      - AUTHENTIK_POSTGRESQL__PASSWORD=file:///run/secrets/authentik_postgres_password
+      - AUTHENTIK_POSTGRESQL__USER=file:///run/secrets/authentik_postgres_user
+      - AUTHENTIK_SECRET_KEY=file:///run/secrets/authentik_secret_key
+      - AUTHENTIK_HOST=http://auth.svc.burrow.casa
+    networks: 
+      - authentik
+      - infra
+

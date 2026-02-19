@@ -1,0 +1,22 @@
+---
+- fail: 
+    msg: "secret_name variable is required"
+  when: secret_name is not defined or secret_name == ""
+
+- fail: 
+    msg: "secret_name variable must be uppercase and contain only letters, numbers and underscores"
+  when: secret_name is not match("^[A-Z0-9_]+$")
+
+- debug: 
+    msg: "A secret value for {{ secret_name }} is not provided a random value will be generated"
+  when: secret_value is not defined or secret_value == ""
+
+- name: Store secret value in Fnox
+  ansible.builtin.command: 
+    cmd: "fnox set {{ secret_name }} '{{ secret_value | default( lookup('password', '/dev/null length=64 chars=ascii_letters'), true ) }}' --description=Ansible-managed secret"
+    chdir: "{{ playbook_dir }}/../"
+  become: false
+  delegate_to: localhost
+  when: lookup('env', secret_name) == ""
+  register: fnox_result
+  failed_when: fnox_result.rc != 0

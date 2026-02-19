@@ -3,7 +3,7 @@ networks:
     external: true
 
 secrets: 
-  mijnhost_api_key:
+  traefik_mijnhost_api_key:
     file: ./secrets/traefik/mijnhost_api_key
 
 services:
@@ -13,7 +13,7 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
-      MIJNHOST_API_KEY_FILE: /run/secrets/mijnhost_api_key
+      MIJNHOST_API_KEY_FILE: /run/secrets/traefik_mijnhost_api_key
     networks:
       - proxy
     ports:
@@ -27,7 +27,7 @@ services:
       # Volume for Let's Encrypt certificates
       - ./data/traefik:/var/traefik
     secrets:
-      - mijnhost_api_key
+      - traefik_mijnhost_api_key
     labels: 
       # Enable routing for Traefik dashboard
       - "traefik.enable=true"

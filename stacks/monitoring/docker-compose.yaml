@@ -5,6 +5,12 @@ networks:
   monitoring:
     driver: bridge
 
+secrets: 
+  grafana_oauth_client_id:
+    file: ./secrets/grafana/oauth_client_id
+  grafana_oauth_client_secret:
+    file: ./secrets/grafana/oauth_client_secret
+
 services: 
   victoriametrics: 
     image: victoriametrics/victoria-metrics:v1.135.0
@@ -53,8 +59,21 @@ services:
     networks:
       - proxy
       - monitoring
+    secrets:
+      - grafana_oauth_client_id
+      - grafana_oauth_client_secret
     environment:
-      - GF_SERVER_ROOT_URL=https://grafana.svc.burrow.casa
+      GF_SERVER_ROOT_URL: https://grafana.svc.burrow.casa
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: "authentik"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID__FILE: "/run/secrets/grafana_oauth_client_id"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET__FILE: "/run/secrets/grafana_oauth_client_secret"
+      GF_AUTH_GENERIC_OAUTH_SCOPES: "openid profile email"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: "https://auth.svc.burrow.casa/application/o/authorize/"
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: "https://auth.svc.burrow.casa/application/o/token/"
+      GF_AUTH_GENERIC_OAUTH_API_URL: "https://auth.svc.burrow.casa/application/o/userinfo/"
+      GF_AUTH_SIGNOUT_REDIRECT_URL: "https://auth.svc.burrow.casa/application/o/grafana/end-session/"
+      GF_AUTH_OAUTH_AUTO_LOGIN: "true"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.grafana.entrypoints=websecure"

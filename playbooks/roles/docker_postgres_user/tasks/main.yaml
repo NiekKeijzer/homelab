@@ -1,0 +1,30 @@
+--- 
+- fail: 
+    msg: "pg_user, pg_password and pg_db must be set as variables or environment variables"
+  when: pg_user is not defined or pg_password is not defined or pg_db is not defined
+
+- name: Template SQL init script
+  ansible.builtin.template:
+    src: templates/create_user.sql.j2
+    dest: /tmp/create_user_{{ pg_user }}.sql
+
+- name: Run PostgreSQL create user container
+  community.docker.docker_container:
+    name: pg_init
+    image: postgres:18.2
+    state: started
+    auto_remove: true
+    detach: false
+    networks:
+      - name: infra
+    env:
+      PGPASSWORD: "{{ lookup('env', 'INFRA_POSTGRES_PASSWORD') }}"
+    volumes:
+      - /tmp/create_user_{{ pg_user }}.sql:/tmp/create_user.sql:ro
+    # TODO: Lookup postgres provision user from fnox
+    command: psql -h postgres -p 5432 -U mrrobot -f /tmp/create_user.sql
+
+- name: Remove temporary SQL script
+  ansible.builtin.file:
+    path: /tmp/create_user_{{ pg_user }}.sql
+    state: absent

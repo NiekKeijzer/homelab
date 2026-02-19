@@ -141,5 +141,9 @@ description = "Lists thee Ansible inventory"
 run = "ansible-inventory --list"
 
 [tasks."ansible:run:main"]
-description = "Runs the Ansible playbook"
+description = "Provision and configure the homelab using Ansible"
 run = "ansible-playbook -i playbooks/inventory.yaml playbooks/main.yaml"
+
+[tasks."ansible:run:stacks"]
+description = "Deploy Docker stacks using Ansible"
+run = "ansible-playbook -i playbooks/inventory.yaml playbooks/stacks.yaml"

@@ -1,0 +1,4 @@
+---
+stack_name: null
+stack_vm_dir: '/opt/stacks/{{ stack_name }}'
+stack_dir: '{{ playbook_dir }}/../stacks/{{ stack_name }}'
