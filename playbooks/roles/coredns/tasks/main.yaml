@@ -20,7 +20,8 @@
 
 - name: Download CoreDNS binary
   ansible.builtin.get_url:
-    url: "https://github.com/coredns/coredns/releases/download/v{{ coredns_version }}/coredns_{{ coredns_version }}_linux_amd64.tgz"
+    # TODO: Detect architecture and download the appropriate binary
+    url: "https://github.com/coredns/coredns/releases/download/v{{ coredns_version }}/coredns_{{ coredns_version }}_linux_arm64.tgz"
     dest: "/tmp/coredns.tgz"
     mode: '0644'
 

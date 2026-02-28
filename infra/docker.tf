@@ -42,7 +42,7 @@ resource "proxmox_virtual_environment_vm" "docker_vm" {
     user_account {
       username = var.provision_user
       password = "password"
-      keys     = [tls_private_key.provision_ssh_key.public_key_openssh]
+      keys     = [chomp(tls_private_key.provision_ssh_key.public_key_openssh)]
     }
   }
 

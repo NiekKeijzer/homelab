@@ -38,3 +38,13 @@ variable "vlan_id" {
   type = number
   default = 20
 }
+
+variable "generated_files" {
+  type = string
+  default = "./generated"
+}
+
+variable "node_domain" {
+  type = string
+  default = "node.burrow.casa"
+}

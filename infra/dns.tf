@@ -1,81 +1,39 @@
 locals {
-  dns_vm_count = 1
+  dns_node_count = 1
 }
 
+resource "local_file" "dns_user_data" {
+  count = local.dns_node_count
 
-resource "proxmox_virtual_environment_vm" "dns_vm" {
-  count       = local.dns_vm_count
-  name        = format("dns-%02s", count.index + 1)
-  description = "Managed by OpenTofu"
-  tags        = ["opentofu", "dns", "debian", "debian-13"]
-  node_name   = var.proxmox_node
-
-  stop_on_destroy = true
-
-  agent {
-    enabled = true
-  }
-
-  clone {
-    vm_id = var.proxmox_template_vm_id
-  }
-
-  cpu {
-    cores = 1
-  }
-
-  memory {
-    dedicated = 512
-  }
-
-  initialization {
-    ip_config {
-      ipv4 {
-        address = "192.168.20.${10 + count.index}/24"
-        gateway = var.gateway
-      }
-    }
-
-    dns {
-      servers = ["1.1.1.1"]
-    }
-
-    user_account {
-      username = var.provision_user
-      password = "password"
-      keys     = [tls_private_key.provision_ssh_key.public_key_openssh]
-    }
-  }
-
-  disk {
-    size      = 20
-    interface = "virtio0"
-    iothread  = true
-    discard   = "on"
-  }
-
-  network_device {
-    bridge  = "vmbr0"
-    vlan_id = var.vlan_id
-    model   = "virtio"
-  }
-
-  operating_system {
-    type = "l26"
-  }
+  content = templatefile("${path.module}/templates/dns-user-data.yaml.tftpl", {
+    hostname = format("dns-%02s", count.index + 1),
+    provision_user = var.provision_user,
+    ssh_public_key = chomp(tls_private_key.provision_ssh_key.public_key_openssh),
+  })
+  filename = "${var.generated_files}/${format("dns-%02s", count.index + 1)}-user-data.yaml"
 }
 
 resource "ansible_host" "dns" {
-  depends_on = [proxmox_virtual_environment_vm.dns_vm]
+  depends_on = [local_file.dns_user_data]
 
-  count = local.dns_vm_count
+  count = local.dns_node_count
 
   groups = ["dns", ]
 
-  name = proxmox_virtual_environment_vm.dns_vm[count.index].name
+  name = format("dns-%02s", count.index + 1)
   variables = {
-    ansible_host                 = proxmox_virtual_environment_vm.dns_vm[count.index].ipv4_addresses[1][0]
+    # TODO: DHCP reservations in Unifi
+    # TODO: Local DNS entry in Unifi for the node(s) to avoid having to use the IP address(es) in the Ansible inventory
+    ansible_host                 = format("dns-%02s.%s", count.index + 1, var.node_domain)
     ansible_user                 = var.provision_user
     ansible_ssh_private_key_file = abspath(local_sensitive_file.provision_ssh_key.filename)
   }
+}
+
+output "dns_user_data_instructions" {
+  value = <<-EOT
+  The user-data file(s) for the RPI DNS node(s) have been generated in the ${var.generated_files} directory. 
+  You can use these files to provision the DNS node(s) by copying the respective file(s) to the root of the SD card(s) used for the RPI DNS node(s).
+  The file(s) are named according to the format "dns-XX.node_domain-user-data.yaml", where XX is the node number and node_domain is the domain specified in the variables.
+  EOT
 }

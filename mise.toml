@@ -2,8 +2,7 @@
 opentofu = '1.9.1'
 packer = "1.12.0"
 dasel = "2.8.1"
-pipx = "1.8.0"
-ansible = "13.0.0"
+ansible-core = "latest"
 
 [env]
 _.path = ["./bin"]
@@ -134,10 +133,21 @@ depends = ["tofu:format", "tofu:validate"]
 
 [tasks."ansible:install"]
 description = "Installs Ansible roles and collections"
-run = "ansible-galaxy install -r playbooks/requirements.yaml"
+depends = [
+  "ansible:install:collections",
+  "ansible:install:roles",
+]
+
+[tasks."ansible:install:collections"]
+description = "Installs Ansible collections"
+run = "ansible-galaxy collection install -r playbooks/requirements.yaml"
+
+[tasks."ansible:install:roles"]
+description = "Installs Ansible roles"
+run = "ansible-galaxy role install -r playbooks/requirements.yaml"
 
 [tasks."ansible:inventory"]
-description = "Lists thee Ansible inventory"
+description = "Lists the Ansible inventory"
 run = "ansible-inventory --list"
 
 [tasks."ansible:run:main"]
