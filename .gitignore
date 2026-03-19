@@ -60,3 +60,7 @@ playbooks/galaxy/
 
 # Stacks - ignore sensitive config files
 stacks/**/secrets/
+
+# Stacks - generated files
+stacks/monitoring/config/vmagent/file_sd/*
+!stacks/monitoring/config/vmagent/file_sd/.gitkeep

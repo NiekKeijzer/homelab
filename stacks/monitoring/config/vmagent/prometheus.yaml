@@ -17,3 +17,8 @@ scrape_configs:
     static_configs:
       - targets:
           - traefik:8080
+
+  - job_name: file 
+    file_sd_configs:
+      - files:
+          - /etc/vmagent/file_sd/*.json

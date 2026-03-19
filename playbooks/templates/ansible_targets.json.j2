@@ -1,0 +1,13 @@
+[
+{% for host in groups['all'] %}
+{% if hostvars[host].node_exporter_enabled | default(true) %}
+{
+  "targets": ["{{ hostvars[host].ansible_host }}:9100"],
+  "labels": {
+    "instance": "{{ host }}",
+    "role": "{{ hostvars[host].role | default('unknown') }}"
+  }
+}{% if not loop.last %},{% endif %}
+{% endif %}
+{% endfor %}
+]

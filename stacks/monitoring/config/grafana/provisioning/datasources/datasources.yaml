@@ -1,0 +1,18 @@
+
+datasources:
+  - name: VictoriaMetrics
+    type: victoriametrics-metrics-datasource
+    access: proxy
+    url: http://victoriametrics:8428
+    basicAuth: false
+    isDefault: true
+    editable: false
+
+  # Prometheus datasource is added for compatibility with dashboards that expect a Prometheus datasource. It will be used as a proxy to VictoriaMetrics.
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://victoriametrics:8428
+    basicAuth: false
+    isDefault: false
+    editable: false

@@ -5,6 +5,9 @@
       security_sudoers_passwordless: ['mrrobot']
       security_autoupdate_enabled: true
 
+    - role: prometheus.prometheus.node_exporter
+      node_exporter_web_listen_address: 0.0.0.0:9100
+
 - hosts: dns
   roles: 
     - role: geerlingguy.firewall
@@ -16,6 +19,7 @@
         # Health check
         - 8080 
         # Metrics
+        - 9100
         - 9153
       firewall_allowed_udp_ports:
         - 53
@@ -35,6 +39,8 @@
         - 22
         - 80
         - 443
+        # Metrics
+        - 9100
       firewall_additional_rules:
         - "iptables -I INPUT -i docker0 -j ACCEPT"
         - "iptables -I FORWARD -i docker0 -j ACCEPT"

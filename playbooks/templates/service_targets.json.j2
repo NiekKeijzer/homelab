@@ -1,0 +1,12 @@
+[
+{% for svc in services %}
+{
+  "targets": ["{{ hostvars[svc.host].ansible_host }}:{{ svc.port }}"],
+  "labels": {
+    "job": "{{ svc.name }}",
+    "instance": "{{ svc.host }}",
+    "service": "{{ svc.name }}"
+  }
+}{% if not loop.last %},{% endif %}
+{% endfor %}
+]
