@@ -1,3 +1,4 @@
+---
 - name: "{{ stack_name }} | Create stack directory "
   ansible.builtin.file:
     path: "{{ stack_vm_dir }}"
@@ -12,7 +13,7 @@
     group: docker
     directory_mode: '0744'
 
-- name: "{{ stack_name }} | Check if stack defines secrets"
+- name: "{{ stack_name }} | Check if stack defines external dependencies"
   block: 
     - name: "{{ stack_name }} | Read docker-compose.yaml"
       ansible.builtin.slurp:
@@ -24,6 +25,15 @@
     - name: "{{ stack_name }} | Parse docker-compose.yml"
       ansible.builtin.set_fact:
         compose: "{{ _compose_raw.content | b64decode | from_yaml }}"
+
+    - name: "{{ stack_name }} | Create external networks "
+      community.docker.docker_network:
+        name: "{{ item.key }}"
+        driver: "{{ item.value.driver | default('bridge') }}"
+        state: present
+      loop: "{{ compose.networks | dict2items | selectattr('value.external', 'defined') }}"
+      when: 
+        - compose.networks is defined
 
     - name: "{{ stack_name }} | Deploy stack secrets "
       ansible.builtin.include_tasks: deploy_service_secrets.yaml
@@ -42,3 +52,5 @@
     project_src: "{{ stack_vm_dir }}"
     state: present
     recreate: "always"
+    remove_orphans: true
+

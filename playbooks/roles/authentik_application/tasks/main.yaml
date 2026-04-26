@@ -1,0 +1,120 @@
+# TODO: Cache the access token
+- name: Validate connection vars
+  ansible.builtin.assert:
+    that:
+      - authentik_url | length > 0
+      - authentik_client_id | length > 0
+      - authentik_client_secret | length > 0
+    fail_msg: >
+      AUTHENTIK_URL, SECURITY_AUTHENTIK_CLIENT_ID, and SECURITY_AUTHENTIK_CLIENT_SECRET must be set in the environment
+      (or overridden via authentik_url / authentik_client_id / authentik_client_secret role vars).
+
+- name: Request OAuth access token using client credentials
+  uri:
+    url: "{{ authentik_url }}/application/o/token/"
+    method: POST
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+    body_format: form-urlencoded
+    body:
+      grant_type: client_credentials
+      client_id: "{{ lookup('env', 'SECURITY_AUTHENTIK_CLIENT_ID') }}"
+      client_secret: "{{ lookup('env', 'SECURITY_AUTHENTIK_CLIENT_SECRET') }}"
+      scope: "goauthentik.io/api"
+    status_code: 200
+  register: oauth_access_token_response
+  no_log: true
+  when: authentik_token is not defined
+
+- ansible.builtin.set_fact:
+    authentik_token: "{{ oauth_access_token_response.json.access_token }}"
+  no_log: true
+
+- name: Fetch existing property mapping UUIDs
+  ansible.builtin.include_tasks: fetch-property-mappings.yaml
+  when: authentik_scope_map is not defined
+
+
+
+- block: 
+    - name: Request OAuth access token
+      uri:
+        url: "https://auth.svc.burrow.casa/application/o/token/"
+        method: POST
+        headers:
+          Content-Type: "application/x-www-form-urlencoded"
+        body_format: form-urlencoded
+        body:
+          grant_type: client_credentials
+          client_id: "{{ lookup('env', 'SECURITY_AUTHENTIK_CLIENT_ID') }}"
+          client_secret: "{{ lookup('env', 'SECURITY_AUTHENTIK_CLIENT_SECRET') }}"
+          scope: "goauthentik.io/api"
+        status_code: 200
+      register: oauth_access_token_response
+
+    - name: Generate random client id for {{ app_name }}
+      ansible.builtin.include_role:
+        name: fnox_secret
+      vars:
+        secret_name: "{{ app_name | upper | regex_replace('[^A-Z0-9_]', '_') }}_CLIENT_ID"
+        secret_length: 40
+
+    - name: Generate random client secret for {{ app_name }}
+      ansible.builtin.include_role:
+        name: fnox_secret
+      vars:
+        secret_name: "{{ app_name | upper | regex_replace('[^A-Z0-9_]', '_') }}_CLIENT_SECRET"
+        secret_length: 128
+
+    - name: Create {{ app_name }} SSO provider in Authentik
+      uri:
+        url: "https://auth.svc.burrow.casa/api/v3/providers/"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "Bearer {{ oauth_access_token_response.json.access_token }}"
+        body_format: json
+        body:
+          name: "Provider for {{ app_name }}"
+          authentication_flow: 
+          authorization_flow: f0ce97d8-2c3f-4174-9f94-5949a886db8b
+          invalidation_flow: a375148e-5d07-4912-a341-34f91dd60b36
+          client_type: confidential
+          client_id: "{{ lookup('env', app_name + '_CLIENT_ID') }}"
+          client_secret: "{{ lookup('env', app_name + '_CLIENT_SECRET') }}"
+          access_code_validity: minutes=1
+          access_token_validity: minutes=5
+          refresh_token_validity: days=30
+          refresh_token_threshold: hours=1
+          include_claims_in_id_token: true
+          redirect_uris: 
+            - matching_mode: strict
+              uri: "https://{{ app_name | lower }}.svc.burrow.casa/"
+          logout_uri: ''
+          sub_mode: hashed_user_id
+          issuer_mode: per_provider
+          jwt_federation_sources: []
+          jwt_federation_providers: []
+
+    - name: Create {{ app_name }} SSO application in Authentik
+      uri:
+        url: "https://auth.svc.burrow.casa/api/v3/core/applications/"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "Bearer {{ oauth_access_token_response.json.access_token }}"
+        body_format: json
+        body:
+          name: "{{ app_name }}"
+          slug: "{{ app_name | regex_replace('[^A-Za-z0-9]', '') | lower }}"
+          provider: "{{ }}"
+          open_in_new_tab: false
+          meta_launch_url: "https://{{ app_name | lower }}.svc.burrow.casa/"
+          meta_description: "{{ meta.description }}"
+          meta_icon: "{{ meta.icon }}"
+          meta_publisher: "{{ meta.publisher }}"
+  delegate_to: localhost
+  become: false
+  when: lookup('env', app_name + '_CLIENT_ID') is not defined and lookup('env', app_name + '_CLIENT_SECRET') is not defined

@@ -1,0 +1,25 @@
+---
+# Resolves human-readable scope names (e.g. "openid", "email") to the UUIDs
+# that Authentik's provider API actually expects.
+#
+# Result: _authentik_scope_map  — dict keyed by scope name, value is UUID string
+
+- name: Fetch all OIDC property mappings
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/propertymappings/provider/scope/"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+      Content-Type: application/json
+    return_content: true
+    status_code: 200
+  register: _pm_response
+  no_log: true
+
+- name: Build scope name → UUID map
+  ansible.builtin.set_fact:
+    authentik_scope_map: >-
+      {{
+        _pm_response.json.results
+        | items2dict(key_name='scope_name', value_name='pk')
+      }}

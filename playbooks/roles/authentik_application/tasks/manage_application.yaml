@@ -1,0 +1,250 @@
+---
+# ── 1. Resolve scope UUIDs ──────────────────────────────────────────────────
+
+- name: "{{ _app.name }} | Resolve scope UUIDs"
+  ansible.builtin.set_fact:
+    _app_scope_uuids: >-
+      {{
+        (_app.oidc.property_mappings | default(authentik_default_scopes))
+        | map('extract', _authentik_scope_map)
+        | select('defined')
+        | list
+      }}
+
+# ── 2. Check existing provider ──────────────────────────────────────────────
+
+- name: "{{ _app.name }} | Check for existing OIDC provider"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/providers/oauth2/?name={{ _app.name | urlencode }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+    return_content: true
+    status_code: 200
+  register: _provider_check
+  no_log: true
+
+- name: "{{ _app.name }} | Set provider state facts"
+  ansible.builtin.set_fact:
+    _provider_exists: "{{ _provider_check.json.count > 0 }}"
+    _provider_id: "{{ _provider_check.json.results[0].pk | default('') }}"
+
+# ── 3. Build desired provider body ─────────────────────────────────────────
+
+- name: "{{ _app.name }} | Build provider payload"
+  ansible.builtin.set_fact:
+    _provider_body: >-
+      {{
+        {
+          'name': _app.name,
+          'client_type': _app.oidc.client_type | default('confidential'),
+          'redirect_uris': _app.oidc.redirect_uris | join('\n'),
+          'property_mappings': _app_scope_uuids,
+          'sub_mode': _app.oidc.sub_mode | default('hashed_user_id'),
+          'issuer_mode': _app.oidc.issuer_mode | default('global'),
+          'include_claims_in_id_token': _app.oidc.include_claims_in_id_token | default(true),
+        }
+        | combine(
+            ({'client_id': _app.oidc.client_id} if _app.oidc.client_id is defined else {}),
+            ({'access_token_validity': _app.oidc.access_token_validity} if _app.oidc.access_token_validity is defined else {}),
+            ({'refresh_token_validity': _app.oidc.refresh_token_validity} if _app.oidc.refresh_token_validity is defined else {}),
+            ({'signing_key': _app.oidc.signing_key} if _app.oidc.signing_key is defined else {})
+        )
+      }}
+
+# ── 4. Create or update provider ───────────────────────────────────────────
+
+- name: "{{ _app.name }} | Create OIDC provider"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/providers/oauth2/"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+      Content-Type: application/json
+    body: "{{ _provider_body | to_json }}"
+    body_format: json
+    return_content: true
+    status_code: 201
+  register: _provider_create
+  no_log: true
+  when: not _provider_exists
+  changed_when: true
+
+- name: "{{ _app.name }} | Update OIDC provider (reconcile drift)"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/providers/oauth2/{{ _provider_id }}/"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+      Content-Type: application/json
+    body: "{{ _provider_body | to_json }}"
+    body_format: json
+    return_content: true
+    status_code: 200
+  register: _provider_update
+  no_log: true
+  when: _provider_exists
+  # Only report changed when Authentik actually returns a modified object.
+  # PATCH is idempotent on Authentik's side for most fields, but we can't
+  # do a reliable diff here without fetching current state — so we mark it
+  # always changed when the task runs. Add a pre-task fetch + diff block
+  # if you need change detection for notification/audit purposes.
+  changed_when: true
+
+- name: "{{ _app.name }} | Capture provider ID"
+  ansible.builtin.set_fact:
+    _provider_id: >-
+      {{
+        (_provider_create.json.pk if not _provider_exists else _provider_id) | string
+      }}
+
+# ── 5. Check existing application ──────────────────────────────────────────
+
+- name: "{{ _app.name }} | Check for existing application"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/core/applications/?slug={{ _app.slug | urlencode }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+    return_content: true
+    status_code: 200
+  register: _app_check
+  no_log: true
+
+- name: "{{ _app.name }} | Set application state facts"
+  ansible.builtin.set_fact:
+    _app_exists: "{{ _app_check.json.count > 0 }}"
+    _app_slug_existing: "{{ _app_check.json.results[0].slug | default('') }}"
+
+# ── 6. Build desired application body ──────────────────────────────────────
+
+- name: "{{ _app.name }} | Build application payload"
+  ansible.builtin.set_fact:
+    _app_body: >-
+      {{
+        {
+          'name': _app.name,
+          'slug': _app.slug,
+          'provider': _provider_id | int,
+          'policy_engine_mode': 'any',
+        }
+        | combine(
+            ({'meta_description': _app.description} if _app.description is defined else {})
+        )
+      }}
+
+# ── 7. Create or update application ────────────────────────────────────────
+
+- name: "{{ _app.name }} | Create application"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/core/applications/"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+      Content-Type: application/json
+    body: "{{ _app_body | to_json }}"
+    body_format: json
+    return_content: true
+    status_code: 201
+  register: _app_create
+  no_log: true
+  when: not _app_exists
+  changed_when: true
+
+- name: "{{ _app.name }} | Update application (reconcile drift)"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/core/applications/{{ _app_slug_existing }}/"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+      Content-Type: application/json
+    body: "{{ _app_body | to_json }}"
+    body_format: json
+    return_content: true
+    status_code: 200
+  no_log: true
+  when: _app_exists
+  changed_when: true
+
+# ── 8. Bind policy group ────────────────────────────────────────────────────
+
+- name: "{{ _app.name }} | Resolve group UUID"
+  ansible.builtin.import_tasks: resolve_group.yml
+
+- name: "{{ _app.name }} | Capture application slug"
+  ansible.builtin.set_fact:
+    _resolved_app_slug: >-
+      {{
+        (_app_create.json.slug if not _app_exists else _app_slug_existing) | string
+      }}
+
+- name: "{{ _app.name }} | Check for existing group binding"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/policies/bindings/?target={{ _resolved_app_slug | urlencode }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+    return_content: true
+    status_code: 200
+  register: _binding_check
+  no_log: true
+
+- name: "{{ _app.name }} | Set binding state facts"
+  ansible.builtin.set_fact:
+    _binding_exists: >-
+      {{
+        _binding_check.json.results
+        | selectattr('group', 'equalto', _group_uuid)
+        | list | length > 0
+      }}
+
+- name: "{{ _app.name }} | Bind group to application"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/policies/bindings/"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+      Content-Type: application/json
+    body:
+      target: "{{ _resolved_app_slug }}"
+      group: "{{ _group_uuid }}"
+      enabled: true
+      order: 0
+    body_format: json
+    return_content: true
+    status_code: 201
+  no_log: true
+  when: not _binding_exists
+  changed_when: true
+
+# ── 9. Emit client secret for confidential apps ────────────────────────────
+
+- name: "{{ _app.name }} | Fetch provider details (client secret)"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/providers/oauth2/{{ _provider_id }}/"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+    return_content: true
+    status_code: 200
+  register: _provider_detail
+  no_log: true
+  when: _app.oidc.client_type | default('confidential') == 'confidential'
+
+- block: 
+    - name: "{{ _app.name }} | Set client credentials facts"
+      ansible.builtin.include_role:
+        name: fnox_secret
+      vars:
+        secret_name: "{{ app_name | upper | regex_replace('[^A-Z0-9_]', '_') }}_CLIENT_ID"
+        secret_value: "{{ _provider_detail.json.client_id }}"
+
+    - name: "{{ _app.name }} | Set client secret fact"
+      ansible.builtin.include_role:
+        name: fnox_secret
+      vars:
+        secret_name: "{{ app_name | upper | regex_replace('[^A-Z0-9_]', '_') }}_CLIENT_SECRET"
+        secret_value: "{{ _provider_detail.json.client_secret }}"
+  when: 
+    - _app.oidc.client_type | default('confidential') == 'confidential'
+    - _provider_detail is defined

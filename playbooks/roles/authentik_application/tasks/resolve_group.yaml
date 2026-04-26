@@ -1,0 +1,43 @@
+---
+# Resolves _app.group (name string) → _group_uuid (UUID string).
+# Results are cached in _authentik_group_cache to avoid redundant API calls
+# when multiple applications share the same group.
+
+- name: "{{ _app.name }} | Init group cache if absent"
+  ansible.builtin.set_fact:
+    _authentik_group_cache: {}
+  when: _authentik_group_cache is not defined
+
+- name: "{{ _app.name }} | Fetch group UUID for '{{ _app.group }}'"
+  ansible.builtin.uri:
+    url: "{{ authentik_url }}/api/v3/core/groups/?name={{ _app.group | urlencode }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ authentik_token }}"
+    return_content: true
+    status_code: 200
+  register: _group_response
+  no_log: true
+  when: _app.group not in _authentik_group_cache
+
+- name: "{{ _app.name }} | Assert group '{{ _app.group }}' exists"
+  ansible.builtin.assert:
+    that: _group_response.json.count > 0
+    fail_msg: >
+      Group '{{ _app.group }}' was not found in Authentik.
+      Create it first or check the name for typos.
+  when: _app.group not in _authentik_group_cache
+
+- name: "{{ _app.name }} | Cache group UUID"
+  ansible.builtin.set_fact:
+    _authentik_group_cache: >-
+      {{
+        _authentik_group_cache | combine({
+          _app.group: _group_response.json.results[0].pk
+        })
+      }}
+  when: _app.group not in _authentik_group_cache
+
+- name: "{{ _app.name }} | Set resolved group UUID"
+  ansible.builtin.set_fact:
+    _group_uuid: "{{ _authentik_group_cache[_app.group] }}"

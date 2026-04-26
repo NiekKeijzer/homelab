@@ -1,0 +1,15 @@
+authentik_url: "{{ lookup('env', 'AUTHENTIK_URL') | default('https://auth.svc.burrow.casa') }}"
+authentik_client_id: "{{ lookup('env', 'SECURITY_AUTHENTIK_CLIENT_ID') }}"
+authentik_client_secret: "{{ lookup('env', 'SECURITY_AUTHENTIK_CLIENT_SECRET') }}"
+
+app_name: ''
+app_meta_description: ''
+app_meta_icon: ''
+app_redirect_uri: "https://{{ app_name | lower }}.svc.burrow.casa/"
+app_logout_uri: "https://{{ app_name | lower }}.svc.burrow.casa/logout"
+logout_method: backchannel
+
+meta: 
+  description: "" 
+  icon: ""
+  publisher: ""

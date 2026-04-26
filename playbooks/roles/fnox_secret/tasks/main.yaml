@@ -13,7 +13,7 @@
 
 - name: Store secret value in Fnox
   ansible.builtin.command: 
-    cmd: "fnox set {{ secret_name }} '{{ secret_value | default( lookup('password', '/dev/null length=64 chars=ascii_letters'), true ) }}' --description=Ansible-managed secret"
+    cmd: "fnox set {{ secret_name }} '{{ secret_value | default( lookup('password', '/dev/null length=64 chars=ascii_letters'), true ) }}' --description='Managed by Ansible'"
     chdir: "{{ playbook_dir }}/../"
   become: false
   delegate_to: localhost

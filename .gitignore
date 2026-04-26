@@ -58,6 +58,8 @@ bin/
 playbooks/galaxy/
 !playbooks/galaxy/.gitkeep
 
+playbooks/inventory/static.yaml
+
 # Stacks - ignore sensitive config files
 stacks/**/secrets/
 

@@ -1,0 +1,21 @@
+---
+- name: Create victoria metrics file_sd containing Ansible inventory
+  ansible.builtin.template:
+    src: ansible_targets.json.j2
+    dest: "{{ playbook_dir }}/../stacks/monitoring/config/vmagent/file_sd/ansible_targets.json"
+  delegate_to: localhost
+  run_once: true
+  become: false
+
+- name: Create victoria metrics file_sd containing non-docker services with metrics endpoints 
+  ansible.builtin.template:
+    src: service_targets.json.j2
+    dest: "{{ playbook_dir }}/../stacks/monitoring/config/vmagent/file_sd/service_targets.json"
+  delegate_to: localhost
+  run_once: true
+  become: false
+  vars:
+    services: 
+      - name: coredns
+        host: dns-01
+        port: 9153

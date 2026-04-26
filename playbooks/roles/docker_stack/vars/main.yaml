@@ -1,9 +1,0 @@
----
-stack_root: /opt/stacks
-
-docker_networks_external:
-  - name: proxy
-    driver: bridge
-
-  - name: infra
-    driver: bridge

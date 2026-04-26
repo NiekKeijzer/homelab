@@ -1,0 +1,25 @@
+---
+- name: Running pre deploy tasks
+  block: 
+  - name: Fix Grafana data directory permissions 
+    ansible.builtin.file: 
+      path: "{{ stack_vm_dir }}/data/grafana"
+      owner: 1000
+      state: directory
+      mode: '0755'
+      recurse: true
+
+  - ansible.builtin.include_tasks: service_discovery.yaml
+
+  - ansible.builtin.include_role: 
+      name: authentik_application
+    vars:
+      app_name: Grafana
+      redirect_uri: "https://grafana.svc.burrow.casa/login/generic_oauth"
+      logout_uri: "https://grafana.svc.burrow.casa/logout"
+      logout_method: frontchannel
+
+- ansible.builtin.include_role:
+    name: stack_generic
+  vars:
+    stack_name: monitoring

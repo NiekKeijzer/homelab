@@ -32,7 +32,8 @@
             hosts: 
               - docker-01
 
-- hosts: docker
+- hosts: 
+    - docker
   roles: 
     - role: geerlingguy.firewall
       firewall_allowed_tcp_ports:
@@ -45,8 +46,27 @@
         - "iptables -I INPUT -i docker0 -j ACCEPT"
         - "iptables -I FORWARD -i docker0 -j ACCEPT"
         - "iptables -I FORWARD -o docker0 -j ACCEPT"
+
     - role: geerlingguy.docker
       docker_users:
         - mrrobot
       docker_install_compose_plugin: true
       docker_restart_handler_state: restarted
+      tags: 
+        - docker
+
+    - role: stack_generic 
+      vars:
+        stack_name: network
+
+    # TODO: Auto detect or loop? 
+    - role: stack_generic 
+      vars:
+        stack_name: infra
+
+    - role: stack_monitoring
+    - role: stack_security
+    
+  tags: 
+    - docker
+    - stacks

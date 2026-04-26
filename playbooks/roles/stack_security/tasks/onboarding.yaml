@@ -1,0 +1,42 @@
+---
+- debug: 
+    msg: 
+      - "1. Complete the Authentik setup by visiting https://auth.svc.burrow.casa/if/flow/initial-setup/."
+      - "2. Create an admin user and log in to the Authentik dashboard."
+      - "3. Create an application with provider at https://auth.svc.burrow.casa/if/admin/#/core/applications with the following settings:"
+      - "   - Application Name: Ansible"
+      - "   - Provider type: OAuth2/OpenID Connect"
+      - "   - Provider name: Provider for Ansible"
+      - "   - Authorization flow: default-provider-authorization-explicit-consent"
+      - "   - Client type: Confidential"
+      - "4. Take note of the Client ID and Client Secret for the application, you will need these to generate an API token in the next step."
+
+- ansible.builtin.pause:
+    prompt: "Enter the Authentik Client ID you created in the previous step"
+    echo: false
+  delegate_to: localhost
+  become: false
+  register: authentik_client_id
+
+- ansible.builtin.pause:
+    prompt: "Enter the Authentik Client Secret you created in the previous step"
+    echo: false
+  delegate_to: localhost
+  become: false
+  register: authentik_client_secret
+
+- name: Store Authentik Client ID in Fnox
+  include_role:
+    name: fnox_secret
+  vars:
+    secret_name: "SECURITY_AUTHENTIK_CLIENT_ID"
+    secret_value: "{{ authentik_client_id.user_input }}"
+  no_log: true  
+
+- name: Store Authentik Client Secret in Fnox
+  include_role:
+    name: fnox_secret
+  vars:
+    secret_name: "SECURITY_AUTHENTIK_CLIENT_SECRET"
+    secret_value: "{{ authentik_client_secret.user_input }}"
+  no_log: true  

@@ -1,0 +1,3 @@
+---
+stack_name: monitoring
+stack_vm_dir: '/opt/stacks/{{ stack_name }}'

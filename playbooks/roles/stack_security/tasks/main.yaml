@@ -1,0 +1,16 @@
+---
+- name: Running pre deploy tasks
+  block: 
+    - name: Generate and store security credentials
+      ansible.builtin.include_tasks: credentials.yaml
+
+- ansible.builtin.include_role:
+    name: stack_generic
+  vars:
+    stack_name: security
+
+- name: Running post deploy tasks
+  block: 
+    - name: Generate and store Authentik API token
+      ansible.builtin.include_tasks: onboarding.yaml
+      when: "{{ lookup('env', 'SECURITY_AUTHENTIK_CLIENT_ID') == '' or lookup('env', 'SECURITY_AUTHENTIK_CLIENT_SECRET') == '' }}"
