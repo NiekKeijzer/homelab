@@ -91,12 +91,17 @@ run = "find ./packer-templates -type d -mindepth 1 -maxdepth 1 -exec packer init
 [tasks."packer:build:all"]
 description = "Build all Packer images"
 depends = [
-  "packer:build:debian13"
+  "packer:build:debian13",
+  "packer:build:nixos"
 ]
 
 [tasks."packer:build:debian13"]
 description = "Build a Debian image with Packer"
 run = "packer build -var-file=packer-templates/debian-13.pkrvars.hcl packer-templates/debian"
+
+[tasks."packer:build:nixos"]
+description = "Build a NixOS image with Packer"
+run = "PACKER_LOG=1 packer build -var-file=packer-templates/nixos.pkrvars.hcl packer-templates/nixos"
 
 # TODO: Ideally -chdir would be set once for all OpenTofu tasks. However, TF_CLI_ARGS can only be used for subcommands
 [tasks."tofu:init"]
