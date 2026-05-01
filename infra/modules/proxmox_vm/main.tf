@@ -40,7 +40,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     user_account {
       username = var.provision_user
       password = random_password.provision_password.result
-      keys     = [chomp(var.provision_ssh_public_key)]
+      keys     = var.provision_ssh_public_keys
     }
   }
 
@@ -73,7 +73,6 @@ resource "ansible_host" "vm" {
   variables = {
     ansible_host                 = proxmox_virtual_environment_vm.vm[count.index].ipv4_addresses[1][0]
     ansible_user                 = var.provision_user
-    ansible_ssh_private_key_file = var.provision_ssh_private_key_path
 
     ipv6_address = proxmox_virtual_environment_vm.vm[count.index].ipv6_addresses[1][0]
   }

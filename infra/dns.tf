@@ -8,7 +8,7 @@ resource "local_file" "dns_user_data" {
   content = templatefile("${path.module}/templates/dns-user-data.yaml.tftpl", {
     hostname = format("dns-%02s", count.index + 1),
     provision_user = var.provision_user,
-    ssh_public_key = chomp(tls_private_key.provision_ssh_key.public_key_openssh),
+    provision_ssh_public_keys = var.provision_ssh_public_keys,
   })
   filename = "${var.generated_files}/${format("dns-%02s", count.index + 1)}-user-data.yaml"
 }
@@ -25,8 +25,6 @@ resource "ansible_host" "dns" {
     # TODO: DHCP reservations in Unifi
     # TODO: Local DNS entry in Unifi for the node(s) to avoid having to use the IP address(es) in the Ansible inventory
     ansible_host                 = format("dns-%02s.%s", count.index + 1, var.node_domain)
-    ansible_user                 = var.provision_user
-    ansible_ssh_private_key_file = abspath(local_sensitive_file.provision_ssh_key.filename)
   }
 }
 

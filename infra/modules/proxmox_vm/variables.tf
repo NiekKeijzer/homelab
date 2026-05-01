@@ -73,20 +73,8 @@ variable "provision_user" {
   default = "mrrobot"
 }
 
-variable "provision_password" {
-  description = "Password for the provision user (consider using ssh keys only in production)."
-  type        = string
+variable "provision_ssh_public_keys" {
+  description = "SSH public keys added to the provision user's authorized_keys."
+  type        = list(string)
   sensitive   = true
-  default     = null
-}
-
-variable "provision_ssh_public_key" {
-  description = "SSH public key added to the provision user's authorized_keys."
-  type        = string
-  sensitive   = true
-}
-
-variable "provision_ssh_private_key_path" {
-  description = "Local path to the SSH private key used by Ansible."
-  type        = string
 }

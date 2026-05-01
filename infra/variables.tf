@@ -24,11 +24,6 @@ variable "proxmox_node" {
   default = "pve01"
 }
 
-variable "provision_user" {
-  type = string
-  default = "mrrobot"
-}
-
 variable "gateway" {
   type = string
   default = "192.168.20.1"
@@ -41,10 +36,19 @@ variable "vlan_id" {
 
 variable "generated_files" {
   type = string
-  default = "./generated"
 }
 
 variable "node_domain" {
   type = string
   default = "node.burrow.casa"
+}
+
+variable "provision_user" {
+  type = string
+  default = "mrrobot"
+}
+
+variable "provision_ssh_public_keys" {
+  type = list(string)
+  sensitive = true
 }

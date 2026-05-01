@@ -18,8 +18,7 @@ users:
     groups: [sudo]
     shell: /bin/bash
     sudo: "ALL=(ALL) NOPASSWD:ALL"
-    ssh_authorized_keys:
-      - ${ssh_public_key}
+    ssh_authorized_keys: ${jsonencode(provision_ssh_public_keys)}
 
 enable_ssh: true
 ssh_pwauth: false

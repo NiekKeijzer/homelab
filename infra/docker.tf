@@ -18,8 +18,7 @@ module "docker_vm" {
   template_vm_id = local.vm_template.id
 
   provision_user = local.provision.user
-  provision_ssh_public_key = local.provision.public_key
-  provision_ssh_private_key_path = local.provision.private_key_path
+  provision_ssh_public_keys = local.provision.public_keys
 
   ansible_groups = ["docker", ]
 } 
