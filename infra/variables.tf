@@ -7,10 +7,6 @@ variable "proxmox_port" {
   type = number
 }
 
-variable "proxmox_template_vm_id" {
-  default = "9001"
-}
-
 variable "proxmox_api_token_id" {
   type = string
 }
