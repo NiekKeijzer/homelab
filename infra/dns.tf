@@ -10,7 +10,14 @@ resource "local_file" "dns_user_data" {
     provision_user = var.provision_user,
     provision_ssh_public_keys = var.provision_ssh_public_keys,
   })
-  filename = "${var.generated_files}/${format("dns-%02s", count.index + 1)}-user-data.yaml"
+  filename = "${var.generated_files}/${format("dns-%02s", count.index + 1)}/user-data"
+}
+
+resource "local_file" "dns_ssh" {
+  count = local.dns_node_count
+
+  content = ""
+  filename = "${var.generated_files}/${format("dns-%02s", count.index + 1)}/ssh"
 }
 
 resource "ansible_host" "dns" {
@@ -30,8 +37,8 @@ resource "ansible_host" "dns" {
 
 output "dns_user_data_instructions" {
   value = <<-EOT
-  The user-data file(s) for the RPI DNS node(s) have been generated in the ${var.generated_files} directory. 
-  You can use these files to provision the DNS node(s) by copying the respective file(s) to the root of the SD card(s) used for the RPI DNS node(s).
-  The file(s) are named according to the format "dns-XX.node_domain-user-data.yaml", where XX is the node number and node_domain is the domain specified in the variables.
+  The user-data file(s) for the RPI DNS node(s) have been generated as subdirectories in the ${var.generated_files} directory.
+  You can use these files to provision the DNS node(s) by copying the respective file(s) to the root / boot directory of the SD card(s) used for the RPI DNS node(s).
+  The directories are named according to the format "dns-XX.${var.node_domain}". 
   EOT
 }
