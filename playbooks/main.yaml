@@ -1,6 +1,11 @@
 ---
 - hosts: all
-  roles: 
+  gather_facts: false
+  pre_tasks:
+    - name: Gather facts
+      ansible.builtin.setup:
+      tags: always
+  roles:
     - role: geerlingguy.security
       security_sudoers_passwordless: ['mrrobot']
       security_autoupdate_enabled: true
@@ -63,7 +68,6 @@
       vars:
         stack_name: network
 
-    # TODO: Auto detect or loop? 
     - role: stack_generic 
       vars:
         stack_name: infra
