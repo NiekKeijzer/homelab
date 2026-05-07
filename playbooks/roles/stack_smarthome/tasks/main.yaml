@@ -1,0 +1,9 @@
+---
+- name: Running pre deploy tasks
+  block: 
+    - include_tasks: hooks/pre_deploy_larapaper.yaml
+
+- ansible.builtin.include_role:
+    name: stack_generic
+  vars:
+    stack_name: smarthome

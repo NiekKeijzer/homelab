@@ -11,13 +11,13 @@
 
   - ansible.builtin.include_tasks: service_discovery.yaml
 
-  - ansible.builtin.include_role: 
-      name: authentik_application
-    vars:
-      app_name: Grafana
-      redirect_uri: "https://grafana.svc.burrow.casa/login/generic_oauth"
-      logout_uri: "https://grafana.svc.burrow.casa/logout"
-      logout_method: frontchannel
+  #- ansible.builtin.include_role: 
+  #    name: authentik_application
+  #  vars:
+  #    app_name: Grafana
+  #    redirect_uri: "https://grafana.svc.burrow.casa/login/generic_oauth"
+  #    logout_uri: "https://grafana.svc.burrow.casa/logout"
+ #     logout_method: frontchannel
 
 - ansible.builtin.include_role:
     name: stack_generic

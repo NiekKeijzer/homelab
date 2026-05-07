@@ -67,3 +67,5 @@ stacks/**/secrets/
 # Stacks - generated files
 stacks/monitoring/config/vmagent/file_sd/*
 !stacks/monitoring/config/vmagent/file_sd/.gitkeep
+
+*.env

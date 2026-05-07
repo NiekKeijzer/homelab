@@ -4,14 +4,30 @@
     path: "{{ stack_vm_dir }}"
     state: directory
     mode: '0744'
-  
+
+- name: "{{ stack_name }} | Upload stack files"
+  debug:
+    msg: "Would upload {{ stack_dir }}/{{ item }} to {{ stack_vm_dir }}/{{ item  }}"
+  with_items: 
+    - "docker-compose.yaml"
+    - "scripts"
+    - "config"
+
 - name: "{{ stack_name }} | Upload stack files"
   ansible.builtin.copy:
-    src: "{{ stack_dir }}/"
-    dest: "{{ stack_vm_dir }}"
-    owner: mrrobot
+    src: "{{ stack_dir }}/{{ item }}"
+    dest: "{{ stack_vm_dir }}/{{ item }}"
+    owner: "{{ ansible_user }}"
     group: docker
-    directory_mode: '0744'
+    mode: '0744'
+    recursive: yes
+  with_items: 
+    - "docker-compose.yaml"
+    - "scripts"
+    - "config"
+  when: 
+    - (stack_dir ~ '/' ~ item) is file
+    - (stack_dir ~ '/' ~ item) is directory
 
 - name: "{{ stack_name }} | Check if stack defines external dependencies"
   block: 

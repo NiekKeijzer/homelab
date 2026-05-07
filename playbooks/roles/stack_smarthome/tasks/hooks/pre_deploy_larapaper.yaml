@@ -1,0 +1,38 @@
+---
+- name: Fix Larapaper data directory permissions 
+  ansible.builtin.file: 
+    path: "{{ item }}"
+    owner: 82 # www-data user
+    state: directory
+    mode: '0755'
+    recurse: true
+  with_items: 
+    - "{{ stack_vm_dir }}/data/larapaper/database"
+    - "{{ stack_vm_dir }}/data/larapaper/images"
+
+- name: Create smarthome secrets
+  include_role:
+    name: fnox_secret
+  vars:
+    secret_name: "{{ item.name }}"
+    secret_value: "{{ item.value }}"
+  with_items: 
+    - name: SMARTHOME_LARAPAPER_APP_KEY
+      value: "base64:{{ lookup('password', '/dev/null length=32 chars=ascii_letters,digits') | b64encode }}"
+  no_log: true
+
+- name: Inspect proxy network subnet
+  community.docker.docker_network_info:
+    name: proxy
+  register: proxy_network_info
+
+# Larapaper lacks the option to read Docker secrets from a file, so we need to generate a .env file with the secret values before deployment.
+- name: Generate smarthome .env file
+  ansible.builtin.copy:
+    content: |
+      TRUSTED_PROXIES={{ proxy_network_info.network.IPAM.Config[0].Subnet }}
+      APP_KEY={{ lookup('env', 'SMARTHOME_LARAPAPER_APP_KEY') }}
+    dest: "{{ stack_vm_dir }}/larapaper.env"
+    owner: "{{ ansible_user }}"
+    group: docker
+    mode: '0600'

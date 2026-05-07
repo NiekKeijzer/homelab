@@ -1,0 +1,26 @@
+---
+networks:
+  proxy:
+    external: true
+
+services:
+  larapaper:
+    image: ghcr.io/usetrmnl/larapaper:latest
+    restart: unless-stopped
+    volumes:
+      - ./data/larapaper/database:/var/www/html/database/storage
+      - ./data/larapaper/images:/var/www/html/storage/app/public/images/generated
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - proxy
+    environment:
+      APP_URL: "https://larapaper.svc.burrow.casa"
+      TRMNL_PROXY_REFRESH_MINUTES: 15
+      DB_DATABASE: "database/storage/database.sqlite"
+    env_file:
+      - ./larapaper.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.larapaper.entrypoints=websecure"
+      - "traefik.http.routers.larapaper.rule=Host(`larapaper.svc.burrow.casa`)"
+  

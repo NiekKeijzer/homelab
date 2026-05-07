@@ -33,6 +33,8 @@
           - domain: svc
             hosts: 
               - docker-01
+  tags: 
+    - dns
 
 - hosts: 
     - docker
@@ -66,8 +68,9 @@
       vars:
         stack_name: infra
 
+    - role: stack_smarthome
     - role: stack_monitoring
-    - role: stack_security
+    # - role: stack_security
     
   tags: 
     - docker
