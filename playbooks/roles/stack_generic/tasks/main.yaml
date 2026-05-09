@@ -13,21 +13,26 @@
     - "scripts"
     - "config"
 
-- name: "{{ stack_name }} | Upload stack files"
+- name: "{{ stack_name }} | Upload stack compose file"
   ansible.builtin.copy:
-    src: "{{ stack_dir }}/{{ item }}"
-    dest: "{{ stack_vm_dir }}/{{ item }}"
+    src: "{{ stack_dir }}/docker-compose.yaml"
+    dest: "{{ stack_vm_dir }}/docker-compose.yaml"
     owner: "{{ ansible_user }}"
     group: docker
     mode: '0744'
-    recursive: yes
+
+- name: "{{ stack_name }} | Upload stack files"
+  ansible.builtin.copy:
+    src: "{{ stack_dir }}/{{ item }}"
+    dest: "{{ stack_vm_dir }}/"
+    owner: "{{ ansible_user }}"
+    group: docker
+    mode: '0744'
   with_items: 
-    - "docker-compose.yaml"
     - "scripts"
     - "config"
   when: 
-    - (stack_dir ~ '/' ~ item) is file
-    - (stack_dir ~ '/' ~ item) is directory
+    - (stack_dir ~ '/' ~ item) is file or (stack_dir ~ '/' ~ item) is directory
 
 - name: "{{ stack_name }} | Check if stack defines external dependencies"
   block: 

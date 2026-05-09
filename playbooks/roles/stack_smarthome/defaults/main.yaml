@@ -1,2 +1,6 @@
 ---
 stack_name: smarthome
+
+create_home_assistant_router: true
+home_assistant_host: homeassistant.local
+home_assistant_port: 8123

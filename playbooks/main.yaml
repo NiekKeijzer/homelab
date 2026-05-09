@@ -73,6 +73,10 @@
         stack_name: infra
 
     - role: stack_smarthome
+      vars:
+        create_home_assistant_router: true
+        home_assistant_host: "{{ hostvars['home-assistant']['ansible_host'] }}"
+
     - role: stack_monitoring
     # - role: stack_security
     

@@ -1,0 +1,7 @@
+[http.routers.home-assistant]
+entryPoints = [ "websecure" ]
+rule = "Host(`homeassistant.svc.burrow.casa`)"
+service = "home-assistant"
+
+[[http.services.home-assistant.loadBalancer.servers]]
+url = "http://{{ home_assistant_host }}:{{ home_assistant_port }}"

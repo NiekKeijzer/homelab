@@ -76,6 +76,10 @@ exposedByDefault = false
 network = "proxy"
 defaultRule = 'Host(`{{ index .Labels "com.docker.compose.service" }}.svc.burrow.casa`)'
 
+[providers.file]
+directory = "/etc/traefik/dynamic"
+watch = true
+
 [log]
 level = "INFO"
 filePath = "/var/log/traefik/traefik.log"
