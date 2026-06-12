@@ -1,0 +1,14 @@
+## Komodo Resource Sync definitions for this repo.
+## https://komo.do/docs/automate/sync-resources
+##
+## This file is the GitOps source of truth for Komodo resources.
+## Create the initial "homelab" Resource Sync in the Komodo UI pointing at
+## this repo / file path; from then on, this file manages itself and any
+## additional resources added below.
+
+[[resource_sync]]
+name = "homelab"
+[resource_sync.config]
+git_account = "NiekKeijzer"
+repo = "NiekKeijzer/homelab"
+resource_path = ["komodo/resources.toml"]
