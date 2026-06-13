@@ -42,9 +42,17 @@
     - src: compose.env.j2
       dest: .env
 
-#- name: Start Komodo Core with Docker Compose
-#  community.docker.docker_compose_v2:
-#    project_src: "{{ install_dir }}"
-#    state: present
-#    recreate: "always"
-#    remove_orphans: true
+- name: Start Komodo Core with Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ install_dir }}"
+    state: present
+    recreate: "always"
+    remove_orphans: true
+
+- debug: 
+    msg: |
+      Komodo does not yet support loading bootstrapping syncs from a file, that means the following needs to be done in the UI: 
+      1. Create a new repo in Komodo with the name "homelab" and the linked repo "niekkeijzer/homelab"
+      2. Create a new resource sync in Komodo with the name "homelab" and the linked repo "niekkeijzer/homelab", resource path "komodo/", and enable "Include Variables" and "Include User Groups"
+      
+      See playbooks/roles/komodo_core/files/syncs/main.toml for the configuration of the repo and resource sync.
