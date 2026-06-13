@@ -7,26 +7,44 @@
     group: "{{ ansible_user }}"
     mode: '0755'
 
-- name: Deploy Komodo Core with Docker Compose
+- name: Ensure Komodo config directory exists
+  ansible.builtin.file:
+    path: "{{ install_dir }}/config/syncs"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Upload Komodo Core with Docker Compose
   ansible.builtin.copy:
-    src: compose.yaml
-    dest: "{{ install_dir }}/compose.yaml"
+    src: "{{ item.src }}"
+    dest: "{{ install_dir }}/{{ item.dest }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0644'
+  with_items: 
+    - src: compose.yaml
+      dest: compose.yaml
+    - src: syncs/main.toml
+      dest: ./config/syncs/main.toml
 
-- name: Deploy Komodo Core config file
+- name: Render Komodo config files
   ansible.builtin.template:
-    src: "compose.env.j2"
-    dest: "{{ install_dir }}/.env"
+    src: "{{ item.src }}"
+    dest: "{{ install_dir }}/{{ item.dest }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0600'
   no_log: true
+  with_items: 
+    - src: core.config.toml.j2
+      dest: ./config/core.config.toml
+    - src: compose.env.j2
+      dest: .env
 
-- name: Start Komodo Core with Docker Compose
-  community.docker.docker_compose_v2:
-    project_src: "{{ install_dir }}"
-    state: present
-    recreate: "always"
-    remove_orphans: true
+#- name: Start Komodo Core with Docker Compose
+#  community.docker.docker_compose_v2:
+#    project_src: "{{ install_dir }}"
+#    state: present
+#    recreate: "always"
+#    remove_orphans: true

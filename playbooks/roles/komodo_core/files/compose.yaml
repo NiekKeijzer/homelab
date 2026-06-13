@@ -60,9 +60,9 @@ services:
       ## Store dated backups of the database - https://komo.do/docs/setup/backup
       - ${COMPOSE_KOMODO_BACKUPS_PATH}:/backups
       ## Store sync files on server
-      - syncs:/syncs
+      - ./config/syncs:/syncs
       ## Mount custom core.config.toml
-      # - ./core.config.toml:/config/config.toml
+      - ./config/core.config.toml:/config/config.toml
       ## Optionally mount custom root CA certificate to trust
       # - /path/to/root_ca.crt:/usr/local/share/ca-certificates/root_ca.crt
 

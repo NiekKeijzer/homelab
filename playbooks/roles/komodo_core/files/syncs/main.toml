@@ -1,0 +1,12 @@
+[[resource_sync]]
+name = "homelab"
+description = "Syncs all Komodo resources declared in komodo/ of this repo."
+
+[resource_sync.config]
+git_provider = "github.com"
+git_account = "NiekKeijzer"
+repo = "NiekKeijzer/homelab"
+# Temporarily using a feature branch to test the sync functionality, will switch to main once it's working properly.
+# TODO: Switch to main branch once the sync functionality is verified to be working properly.
+branch = "feature/komodo"
+resource_path = ["komodo"]
