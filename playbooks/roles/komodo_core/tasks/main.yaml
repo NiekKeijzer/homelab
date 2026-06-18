@@ -1,19 +1,16 @@
 ---
-- name: Ensure Komodo install directory exists
+- name: Ensure Komodo install directories exist
   ansible.builtin.file:
-    path: "{{ install_dir }}"
+    path: "{{ item }}"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0755'
-
-- name: Ensure Komodo config directory exists
-  ansible.builtin.file:
-    path: "{{ install_dir }}/config/syncs"
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: '0755'
+  with_items: 
+    - "{{ install_dir }}"
+    - "{{ install_dir }}/config"
+    - "{{ core_config_dir }}"
+    - "{{ periphery_config_dir }}"
 
 - name: Upload Komodo Core with Docker Compose
   ansible.builtin.copy:
@@ -25,22 +22,21 @@
   with_items: 
     - src: compose.yaml
       dest: compose.yaml
-    - src: syncs/main.toml
-      dest: ./config/syncs/main.toml
 
 - name: Render Komodo config files
   ansible.builtin.template:
     src: "{{ item.src }}"
-    dest: "{{ install_dir }}/{{ item.dest }}"
+    dest: "{{ item.dest }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0600'
   no_log: true
   with_items: 
     - src: core.config.toml.j2
-      dest: ./config/core.config.toml
+      dest: "{{ core_config_dir }}/config.toml"
+  # Shared across Core and Periphery, so only render once
     - src: compose.env.j2
-      dest: .env
+      dest: "{{ install_dir }}/config/compose.env"
 
 - name: Start Komodo Core with Docker Compose
   community.docker.docker_compose_v2:
@@ -54,5 +50,5 @@
       Komodo does not yet support loading bootstrapping syncs from a file, that means the following needs to be done in the UI: 
       1. Create a new repo in Komodo with the name "homelab" and the linked repo "niekkeijzer/homelab"
       2. Create a new resource sync in Komodo with the name "homelab" and the linked repo "niekkeijzer/homelab", resource path "komodo/", and enable "Include Variables" and "Include User Groups"
-      
+      3. Add the public key to the list of accepted key using `mise run fnox:age:add-public-key {{ age_public_key }}`
       See playbooks/roles/komodo_core/files/syncs/main.toml for the configuration of the repo and resource sync.

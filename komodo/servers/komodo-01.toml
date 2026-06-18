@@ -1,0 +1,4 @@
+[[server]]
+name = "komodo-01"
+[server.config]
+enabled = true

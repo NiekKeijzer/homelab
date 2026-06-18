@@ -29,3 +29,7 @@ mise run fnox:age:add-public-key <public-key>
 ```bash
 mise run build-debian-image
 ```
+
+## Companion repositories 
+
+- [Komodo Periphery Fnox](https://github.com/NiekKeijzer/komodo-periphery-fnox) Komodo Periphery image with Fnox preinstalled

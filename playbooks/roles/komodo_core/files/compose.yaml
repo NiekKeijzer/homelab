@@ -14,7 +14,7 @@ services:
   postgres:
     # 🚨 Pin to a specific version. Updates can be breaking.
     # https://github.com/FerretDB/documentdb/pkgs/container/postgres-documentdb
-    image: ghcr.io/ferretdb/postgres-documentdb
+    image: ghcr.io/ferretdb/postgres-documentdb:17-0.107.0-ferretdb-2.7.0
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
@@ -30,7 +30,7 @@ services:
   ferretdb:
     # 🚨 Pin to a specific version. Updates can be breaking.
     # https://github.com/FerretDB/FerretDB/pkgs/container/ferretdb
-    image: ghcr.io/ferretdb/ferretdb
+    image: ghcr.io/ferretdb/ferretdb:2.7.0
     labels:
       komodo.skip: # Prevent Komodo from stopping with StopAllContainers
     restart: unless-stopped
@@ -60,9 +60,9 @@ services:
       ## Store dated backups of the database - https://komo.do/docs/setup/backup
       - ${COMPOSE_KOMODO_BACKUPS_PATH}:/backups
       ## Store sync files on server
-      - ./config/syncs:/syncs
+      - syncs:/syncs
       ## Mount custom core.config.toml
-      - ./config/core.config.toml:/config/config.toml
+      - ./config/core/config.toml:/config/config.toml
       ## Optionally mount custom root CA certificate to trust
       # - /path/to/root_ca.crt:/usr/local/share/ca-certificates/root_ca.crt
 
@@ -70,15 +70,19 @@ services:
   ## or deploy the Periphery binary with systemd using 
   ## https://github.com/moghtech/komodo/tree/main/scripts
   periphery:
-    image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    image: ghcr.io/niekkeijzer/komodo-periphery-fnox:${COMPOSE_KOMODO_IMAGE_TAG:-2}
     init: true
     restart: unless-stopped
     depends_on:
       - core
     env_file: ./.env
+    environment: 
+      FNOX_AGE_KEY_FILE: /config/periphery/age_key.txt
     volumes:
       ## Attach the Core / Periphery communication keys
       - keys:/config/keys
+      ## Attach the age keys for encrypting/decrypting secrets
+      - ./config/periphery/age_key.txt:/config/periphery/age_key.txt
       ## Mount external docker socket
       - /var/run/docker.sock:/var/run/docker.sock
       ## Allow Periphery to see processes outside of container

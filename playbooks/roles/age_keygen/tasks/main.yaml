@@ -1,0 +1,43 @@
+---
+- name: Ensure config directory for Age keys exists
+  ansible.builtin.file:
+    path: "{{ age_key_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Ensure Age is installed
+  ansible.builtin.package:
+    name: age
+    state: present
+
+- name: Check if Age key already exists
+  ansible.builtin.stat:
+    path: "{{ age_key_dir }}/age_key.txt"
+  register: age_key_stat
+
+- block: 
+  - name: Generate Age key pair for Peripher
+    ansible.builtin.command: "age-keygen -o {{ age_key_dir }}/age_key.txt"
+    register: age_keygen_result
+    changed_when: false
+    failed_when: age_keygen_result.rc != 0
+    when: not age_key_stat.stat.exists
+
+  - name: Fix permissions on generated Age key pair
+    ansible.builtin.file:
+      path: "{{ age_key_dir }}/age_key.txt"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0600'
+  when: not age_key_stat.stat.exists
+
+- name: Extract public key from generated Age key pair
+  ansible.builtin.command: "age-keygen -y {{ age_key_dir }}/age_key.txt"
+  register: age_public_key_result
+  changed_when: false
+  failed_when: age_public_key_result.rc != 0
+
+- ansible.builtin.set_fact:
+    age_public_key: "{{ age_public_key_result.stdout }}"

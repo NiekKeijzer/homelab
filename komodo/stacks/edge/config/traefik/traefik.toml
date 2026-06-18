@@ -1,0 +1,112 @@
+[api]
+dashboard = true
+
+# LE Staging Resolver
+[certificatesResolvers.letsencrypt-staging.acme]
+email = "burrow_casa+acme+staging@burrow.cloud"
+storage = "/var/traefik/acme_letsencrypt_staging.json"
+caServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+[certificatesResolvers.letsencrypt-staging.acme.dnsChallenge]
+provider = "mijnhost"
+resolvers = [
+    "ns1.mijn.host:53",
+    "ns2.mijn.host:53",
+    "ns3.mijn.host:53"
+]
+
+[certificatesResolvers.letsencrypt-staging.acme.dnsChallenge.propagation]
+delayBeforeChecks = 120
+disableANSChecks = true
+
+# LE Production Resolver
+[certificatesResolvers.letsencrypt-production.acme]
+email = "burrow_casa+acme+production@burrow.cloud"
+storage = "/var/traefik/acme_letsencrypt_production.json"
+caServer = "https://acme-v02.api.letsencrypt.org/directory"
+
+[certificatesResolvers.letsencrypt-production.acme.dnsChallenge]
+provider = "mijnhost"
+resolvers = [
+    "ns1.mijn.host:53",
+    "ns2.mijn.host:53",
+    "ns3.mijn.host:53"
+]
+
+[certificatesResolvers.letsencrypt-production.acme.dnsChallenge.propagation]
+delayBeforeChecks = 120
+disableANSChecks = true
+
+[entryPoints.web]
+address = ":80"
+
+[entryPoints.web.http.redirections.entryPoint]
+to = "websecure"
+scheme = "https"
+
+[entryPoints.websecure]
+address = ":443"
+
+[entryPoints.websecure.transport.respondingTimeouts]
+readTimeout = "0s"
+idleTimeout = "600s"
+writeTimeout = "600s"
+
+[entryPoints.websecure.http.tls]
+certResolver = "letsencrypt-production"
+
+[[entryPoints.websecure.http.tls.domains]]
+main = "svc.burrow.casa"
+sans = ["*.svc.burrow.casa"]
+
+[[entryPoints.websecure.http.tls.domains]]
+main = "burrow.casa"
+sans = ["*.burrow.casa"]
+
+[global]
+checkNewVersion = true
+sendAnonymousUsage = false
+
+[providers]
+providersThrottleDuration = "10s"
+
+[providers.docker]
+endpoint = "unix:///var/run/docker.sock"
+exposedByDefault = false
+network = "proxy"
+defaultRule = 'Host(`{{ index .Labels "com.docker.compose.service" }}.svc.burrow.casa`)'
+
+[providers.file]
+directory = "/etc/traefik/dynamic"
+watch = true
+
+[log]
+level = "INFO"
+format = "common" # json is supported
+
+[accessLog]
+  format = "common" # json is supported
+
+  [accessLog.filters]
+    statusCodes = [ "200", "300-302" ]
+    retryAttempts = true
+    minDuration = "10ms"
+
+  [accessLog.fields]
+    defaultMode = "keep"
+
+    [accessLog.fields.names]
+      ClientUsername = "drop"
+
+    [accessLog.fields.headers]
+      defaultMode = "keep"
+
+      [accessLog.fields.headers.names]
+        User-Agent = "redact"
+        Authorization = "drop"
+
+    [accessLog.fields.queryParameters]
+      defaultMode = "drop"
+
+[metrics]
+prometheus = {}

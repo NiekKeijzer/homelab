@@ -60,7 +60,15 @@
       docker_install_compose_plugin: true
       docker_restart_handler_state: restarted
 
+    - role: age_keygen
+      age_key_dir: "/opt/komodo/config/periphery"
+
     - role: komodo_core
+
+  pre_tasks:
+    - debug:
+        msg: "{{ hostvars[groups['komodo'][0]]['ansible_host'] }}"
+    - fail: 
 
   tags: 
     - komodo
@@ -84,6 +92,11 @@
       docker_install_compose_plugin: true
       docker_restart_handler_state: restarted
 
+    - role: age_keygen
+      age_key_dir: "/opt/periphery/config/periphery"
+
     - role: komodo_periphery
+      # TODO: Determine this dynamically from the Ansible inventory? 
+      komodo_core_address: "ws://komodo-01.node.burrow.casa:9120"
   tags: 
     - komodo
