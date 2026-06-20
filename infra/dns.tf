@@ -1,5 +1,5 @@
 locals {
-  dns_node_count = 1
+  dns_node_count = 2
 }
 
 resource "local_file" "dns_user_data" {
