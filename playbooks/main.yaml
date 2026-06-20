@@ -65,11 +65,6 @@
 
     - role: komodo_core
 
-  pre_tasks:
-    - debug:
-        msg: "{{ hostvars[groups['komodo'][0]]['ansible_host'] }}"
-    - fail: 
-
   tags: 
     - komodo
 
