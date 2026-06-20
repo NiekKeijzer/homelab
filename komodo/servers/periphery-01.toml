@@ -1,0 +1,4 @@
+[[server]]
+name = "periphery-01"
+[server.config]
+enabled = true

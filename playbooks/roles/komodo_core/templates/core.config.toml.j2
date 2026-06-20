@@ -1,0 +1,13 @@
+# See official full config for reference:
+# https://github.com/moghtech/komodo/blob/main/config/core.config.toml
+
+# Disables write support on resources in the UI.
+# This protects users that that would normally have write priviledges during their UI usage,
+# when they intend to fully rely on ResourceSyncs to manage config.
+ui_write_disabled = false
+
+[[git_provider]]
+domain = "github.com"
+accounts = [
+  { username = "NiekKeijzer", token = "{{ lookup('env', 'GITHUB_ACCESS_TOKEN') }}" },
+]

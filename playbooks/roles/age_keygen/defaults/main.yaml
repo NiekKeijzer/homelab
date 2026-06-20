@@ -1,0 +1,2 @@
+---
+age_key_dir: "{{ periphery_config_dir }}"

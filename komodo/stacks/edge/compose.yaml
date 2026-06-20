@@ -1,0 +1,50 @@
+networks: 
+  proxy: 
+    external: true
+
+secrets: 
+  traefik_mijnhost_api_key:
+    file: ./secrets/traefik/mijnhost_api_key
+
+volumes:
+  traefik-data:
+    driver: local
+
+services:
+  traefik: 
+    image: traefik:v3.6.7
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      MIJNHOST_API_KEY_FILE: /run/secrets/traefik_mijnhost_api_key
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik:/etc/traefik:ro
+      # Volume for Let's Encrypt certificates
+      - traefik-data:/var/traefik
+    secrets:
+      - traefik_mijnhost_api_key
+    labels: 
+      # Enable routing for Traefik dashboard
+      - "traefik.enable=true"
+      
+      # Dashboard router
+      - "traefik.http.routers.traefik.rule=Host(`traefik.svc.burrow.casa`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.service=api@internal"
+    
+  whoami:
+    image: traefik/whoami
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.svc.burrow.casa`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"

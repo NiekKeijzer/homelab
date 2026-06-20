@@ -42,15 +42,13 @@
     - dns
 
 - hosts: 
-    - docker
+    - komodo
   roles: 
     - role: geerlingguy.firewall
       firewall_allowed_tcp_ports:
         - 22
         - 80
         - 443
-        # Metrics
-        - 9100
       firewall_additional_rules:
         - "iptables -I INPUT -i docker0 -j ACCEPT"
         - "iptables -I FORWARD -i docker0 -j ACCEPT"
@@ -61,25 +59,39 @@
         - mrrobot
       docker_install_compose_plugin: true
       docker_restart_handler_state: restarted
-      tags: 
-        - docker
 
-    - role: stack_generic 
-      vars:
-        stack_name: network
+    - role: age_keygen
+      age_key_dir: "/opt/komodo/config/periphery"
 
-    - role: stack_generic 
-      vars:
-        stack_name: infra
+    - role: komodo_core
 
-    - role: stack_smarthome
-      vars:
-        create_home_assistant_router: true
-        home_assistant_host: "{{ hostvars['home-assistant']['ansible_host'] }}"
-
-    - role: stack_monitoring
-    # - role: stack_security
-    
   tags: 
-    - docker
-    - stacks
+    - komodo
+
+- hosts: 
+    - periphery
+  roles:
+    - role: geerlingguy.firewall
+      firewall_allowed_tcp_ports:
+        - 22
+        - 80
+        - 443
+      firewall_additional_rules:
+        - "iptables -I INPUT -i docker0 -j ACCEPT"
+        - "iptables -I FORWARD -i docker0 -j ACCEPT"
+        - "iptables -I FORWARD -o docker0 -j ACCEPT"
+
+    - role: geerlingguy.docker
+      docker_users:
+        - mrrobot
+      docker_install_compose_plugin: true
+      docker_restart_handler_state: restarted
+
+    - role: age_keygen
+      age_key_dir: "/opt/periphery/config/periphery"
+
+    - role: komodo_periphery
+      # TODO: Determine this dynamically from the Ansible inventory? 
+      komodo_core_address: "ws://komodo-01.node.burrow.casa:9120"
+  tags: 
+    - komodo

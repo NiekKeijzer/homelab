@@ -1,0 +1,6 @@
+[[deployment]]
+name = "whoami"
+[deployment.config]
+server = "periphery-01"
+image.type = "Image"
+image.params.image = "traefik/whoami:latest"
