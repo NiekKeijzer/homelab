@@ -16,6 +16,14 @@ variable "proxmox_api_token_secret" {
   type = string
 }
 
+variable "proxmox_iso_datastore_id" {
+  default = "iso-store"
+}
+
+variable "proxmox_snippets_datastore_id" {
+  default = "snippet-store"
+}
+
 variable "proxmox_node" {
   default = "pve01"
 }

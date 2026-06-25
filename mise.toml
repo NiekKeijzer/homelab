@@ -21,7 +21,7 @@ PACKER_LOG = "0"
 
 # OpenTofu / Terraform environment variables
 TF_INPUT = 0
-TF_LOG = "DEBUG"
+TF_LOG = "ERROR"
 
 TF_VAR_generated_files = "{{ env.GENERATED_DIR }}"
 

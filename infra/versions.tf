@@ -19,5 +19,10 @@ terraform {
       source  = "ansible/ansible"
       version = "1.3.0"
     }
+
+    ct = {
+      source  = "poseidon/ct"
+      version = "0.14.0"
+    }
   }
 }
