@@ -1,4 +1,0 @@
----
-install_dir: /opt/periphery
-
-periphery_komodo_core_address: ws://komodo-01.node.burrow.casa:9120
