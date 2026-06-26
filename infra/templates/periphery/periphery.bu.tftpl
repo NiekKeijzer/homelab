@@ -1,5 +1,5 @@
 variant: flatcar
-version: 1.1.0          # ← verify against your target channel's release notes, don't assume
+version: 1.1.0
 passwd:
   users:
     - name: ${provision_username}
@@ -9,7 +9,7 @@ passwd:
         - ${key}
 %{ endfor ~}
 storage:
-  filesystems:
+  filesystems: 
     - path: /mnt/data
       device: /dev/sdb
       format: ext4
@@ -28,25 +28,20 @@ storage:
           Address=${ipv4_cidr}
           Gateway=${gateway}
           DNS=${dns}
-    - path: /etc/komodo/docker-compose.yaml
+    - path: /etc/periphery/docker-compose.yaml
       mode: 0644
       contents:
         inline: |
-          ${indent(10, trimspace(komodo_compose))}
-
-    - path: /etc/komodo/compose.env
+          ${indent(10, trimspace(periphery_compose))}
+    - path: /etc/periphery/compose.env
       mode: 0600
       contents:
         inline: |
-          ${indent(10, trimspace(komodo_compose_env))}
-
+          ${indent(10, trimspace(periphery_compose_env))}
     - path: /etc/sysctl.d/99-console-loglevel.conf
       contents:
         inline: |
-          # Suppress KERN_INFO (bridge port state, etc.) from the VM console.
-          # Messages still go to the journal.
           kernel.printk = 4 4 1 7
-
     - path: /opt/extensions/docker-compose/docker-compose-2.34.0-x86-64.raw
       mode: 0644
       contents:
@@ -56,14 +51,13 @@ storage:
         source: https://extensions.flatcar.org/extensions/docker-compose.conf
 
   links:
-   - path: /etc/resolv.conf
-     overwrite: true
-     target: /run/systemd/resolve/stub-resolv.conf
+    - path: /etc/resolv.conf
+      overwrite: true
+      target: /run/systemd/resolve/stub-resolv.conf
+    - target: /opt/extensions/docker-compose/docker-compose-2.34.0-x86-64.raw
+      path: /etc/extensions/docker-compose.raw
+      hard: false
 
-   - target: /opt/extensions/docker-compose/docker-compose-2.34.0-x86-64.raw
-     path: /etc/extensions/docker-compose.raw
-     hard: false
-  
 systemd:
   units:
     - name: systemd-sysupdate.timer
@@ -77,23 +71,21 @@ systemd:
             ExecStartPre=/usr/lib/systemd/systemd-sysupdate -C docker-compose update
             ExecStartPost=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/docker-compose.raw > /tmp/docker-compose-new"
             ExecStartPost=/usr/bin/sh -c "if ! cmp --silent /tmp/docker-compose /tmp/docker-compose-new; then touch /run/reboot-required; fi"
-    - name: komodo.service
+    - name: komodo-periphery.service
       enabled: true
       contents: |
         [Unit]
-        Description=Komodo Stack
-        After=docker.service network-online.target mnt-data.mount
-        Requires=docker.service mnt-data.mount
+        Description=Komodo Periphery
+        After=docker.service network-online.target
+        Requires=docker.service
 
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        WorkingDirectory=/etc/komodo
-        ExecStartPre=/usr/bin/mkdir -p /etc/komodo/backups /mnt/data/postgres /mnt/data/ferretdb
-        ExecStartPre=/usr/bin/chown 1000:1000 /mnt/data/ferretdb
-        ExecStart=/usr/bin/docker compose --env-file /etc/komodo/compose.env up -d --wait
+        WorkingDirectory=/etc/periphery
+        ExecStart=/usr/bin/docker compose --env-file /etc/periphery/compose.env up -d --wait
         ExecStop=/usr/bin/docker compose down
-        TimeoutStartSec=300
+        TimeoutStartSec=120
 
         [Install]
         WantedBy=multi-user.target

@@ -24,5 +24,10 @@ terraform {
       source  = "poseidon/ct"
       version = "0.14.0"
     }
+
+    local = {
+      source  = "hashicorp/local"
+      version = "2.5.2"
+    }
   }
 }

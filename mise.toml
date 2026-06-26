@@ -152,6 +152,10 @@ run = "tofu -chdir=infra plan -out tfplan"
 description = "Applies the changes required to reach the desired state of the configuration"
 run = "tofu -chdir=infra apply tfplan"
 
+[tasks."tofu:yolo"]
+description = "Applies the changes required to reach the desired state of the configuration without a plan"
+run = "tofu -chdir=infra apply -auto-approve"
+
 [tasks."tofu:refresh"]
 description = "Updates the state file with the real infrastructure"
 run = "tofu -chdir=infra refresh"
