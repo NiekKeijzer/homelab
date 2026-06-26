@@ -27,7 +27,9 @@ storage:
           [Network]
           Address=${ipv4_cidr}
           Gateway=${gateway}
-          DNS=${dns}
+%{ for option in dns ~}
+          DNS=${option}
+%{ endfor ~}
     - path: /etc/komodo/docker-compose.yaml
       mode: 0644
       contents:
