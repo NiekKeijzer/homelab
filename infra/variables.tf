@@ -25,7 +25,7 @@ variable "proxmox_snippets_datastore_id" {
 }
 
 variable "proxmox_node" {
-  default = "pve01"
+  default = "pve-01"
 }
 
 variable "gateway" {
@@ -54,5 +54,10 @@ variable "provision_user" {
 
 variable "provision_ssh_public_keys" {
   type = list(string)
+  sensitive = true
+}
+
+variable "github_access_token" {
+  type = string
   sensitive = true
 }

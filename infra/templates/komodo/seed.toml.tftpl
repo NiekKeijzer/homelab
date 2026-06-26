@@ -1,0 +1,24 @@
+[[repo]]
+name = "homelab"
+[repo.config]
+server = "komodo-01"
+git_account = "niekkeijzer"
+repo = "niekkeijzer/homelab"
+branch = "feature/flatcar"
+
+[[resource_sync]]
+name = "homelab"
+[resource_sync.config]
+linked_repo = "homelab"
+resource_path = ["komodo"]
+include_variables = true
+include_user_groups = true
+
+%{ for i in range(periphery_count) ~}
+[[server]]
+name = "${format("periphery-%02d", i + 1)}"
+[server.config]
+address = "wss://192.168.20.${i + 20}:8120"
+enabled = true
+
+%{ endfor ~}

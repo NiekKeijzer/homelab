@@ -44,8 +44,12 @@ services:
     environment:
       KOMODO_DATABASE_ADDRESS: ferretdb:27017
     volumes:
+      # Mount rendered core.config.toml
+      - ./config/core/config.toml:/config/config.toml
+      # Mount persistent data directories for keys, backups, and syncs
       - /mnt/data/keys:/config/keys
-      - /etc/komodo/backups:/backups
+      - /mnt/data/backups:/backups
+      - /mnt/data/syncs:/syncs
 
   periphery:
     image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
@@ -55,7 +59,11 @@ services:
       - core
     env_file: ./compose.env
     volumes:
-      - /mnt/data/keys:/config/keys
+      # Mount external docker socket
       - /var/run/docker.sock:/var/run/docker.sock
+      # Allow Periphery to see processes outside of container
       - /proc:/proc
-      - /etc/komodo:/etc/komodo
+
+      # Mount Core <-> Periphery communication keys
+      - /mnt/data/keys:/config/keys
+      - /mnt/data/komodo:/mnt/data/komodo
