@@ -29,9 +29,11 @@ services:
       ## whitelist / blacklist the disks to filter them, whichever is easier.
       ## Accepts comma separated list of paths.
       ## Usually whitelisting just /etc/hostname gives correct size for single root disk.
-      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname
+      PERIPHERY_INCLUDE_DISK_MOUNTS: /etc/hostname,/mnt/data
       # PERIPHERY_EXCLUDE_DISK_MOUNTS: /snap,/etc/repos
-      FNOX_AGE_KEY_FILE: /config/periphery/age_key.txt
+
+      # TODO: Add support for FNOX_AGE_KEY_FILE to mount the age key for encrypting/decrypting secrets.
+      # FNOX_AGE_KEY_FILE: /config/periphery/age_key.txt
     volumes:
       ## Mount private key storage volume
       - /mnt/data/keys:/config/keys

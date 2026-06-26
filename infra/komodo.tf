@@ -14,10 +14,9 @@ locals {
   #   Spare:                      (.20–.23, 4 unassigned)
   #   Periphery: 192.168.20.24/29 (.24–.31, 8 slots)
   network = {
-    cidr    = "192.168.20.0/24"
-    gateway = "192.168.20.1"
-    # dns     = ["192.168.20.53", "192.168.20.54"]
-    dns = ["192.168.20.27"]
+    cidr    = var.cidr
+    gateway = var.gateway
+    dns = var.dns
   }
 
   network_prefix = tonumber(split("/", local.network.cidr)[1])
@@ -41,11 +40,6 @@ locals {
 }
 
 resource "random_password" "komodo_db_password" {
-  length  = 32
-  special = false
-}
-
-resource "random_password" "komodo_admin_password" {
   length  = 32
   special = false
 }
@@ -118,11 +112,11 @@ module "periphery" {
   count  = local.periphery.vm_count
   source = "./modules/komodo_vm"
 
-  hostname = "${local.periphery.hostname_prefix}-${count.index + 1}"
+  hostname = format("%s-%02d", local.periphery.hostname_prefix, count.index + 1)
   vm_name  = format("%s-%02d", local.periphery.hostname_prefix, count.index + 1)
 
   bu_content = templatefile("${path.module}/templates/periphery/periphery.bu.tftpl", {
-    hostname                  = "${local.periphery.hostname_prefix}-${count.index + 1}"
+    hostname                  = format("%s-%02d", local.periphery.hostname_prefix, count.index + 1)
     provision_username        = var.provision_user
     provision_ssh_public_keys = var.provision_ssh_public_keys
     ipv4_cidr                 = "${cidrhost(local.periphery.network.cidr, count.index)}/${local.network_prefix}"
@@ -130,7 +124,7 @@ module "periphery" {
     dns                       = local.network.dns
     periphery_compose         = file("${path.module}/templates/periphery/docker-compose.yaml")
     periphery_compose_env     = templatefile("${path.module}/templates/periphery/compose.env.tftpl", {
-      hostname = "${local.periphery.hostname_prefix}-${count.index + 1}"
+      hostname = format("%s-%02d", local.periphery.hostname_prefix, count.index + 1)
     })
   })
 

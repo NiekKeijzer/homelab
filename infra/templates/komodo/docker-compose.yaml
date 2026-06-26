@@ -45,7 +45,7 @@ services:
       KOMODO_DATABASE_ADDRESS: ferretdb:27017
     volumes:
       # Mount rendered core.config.toml
-      - ./config/core/config.toml:/config/config.toml
+      - ./config/core.config.toml:/config/config.toml
       # Mount persistent data directories for keys, backups, and syncs
       - /mnt/data/keys:/config/keys
       - /mnt/data/backups:/backups

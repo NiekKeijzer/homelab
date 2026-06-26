@@ -28,14 +28,19 @@ variable "proxmox_node" {
   default = "pve-01"
 }
 
+variable "cidr" {
+  default = "192.168.20.0/24"
+}
+
 variable "gateway" {
   type = string
   default = "192.168.20.1"
 }
 
-variable "vlan_id" {
-  type = number
-  default = 20
+variable "dns" {
+  type = list(string)
+  default = ["192.168.20.27"]
+  # default = ["192.168.20.53", "192.168.20.54"]
 }
 
 variable "generated_files" {

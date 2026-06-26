@@ -78,8 +78,8 @@ systemd:
       contents: |
         [Unit]
         Description=Komodo Periphery
-        After=docker.service network-online.target
-        Requires=docker.service
+        After=docker.service network-online.target mnt-data.mount
+        Requires=docker.service mnt-data.mount
 
         [Service]
         Type=oneshot
