@@ -1,5 +1,0 @@
----
-install_dir: /opt/komodo
-
-core_config_dir: "{{ install_dir }}/config/core"
-periphery_config_dir: "{{ install_dir }}/config/periphery"

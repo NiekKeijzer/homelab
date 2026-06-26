@@ -3,6 +3,7 @@ opentofu = '1.9.1'
 packer = "1.12.0"
 dasel = "2.8.1"
 ansible-core = "latest"
+fnox = "latest"
 
 [settings]
 env_shell_expand = true
@@ -16,20 +17,13 @@ GENERATED_DIR = "{{ config_root }}/generated"
 PROVISION_USER = "mrrobot"
 
 # Packer environment variables
-PKR_VAR_proxmox_api_token_id = { value = "{{ env.PROXMOX_PKR_API_TOKEN_ID }}", redact = true}
-PKR_VAR_proxmox_api_token_secret = { value = "{{ env.PROXMOX_PKR_API_TOKEN_SECRET }}", redact = true}
-PKR_VAR_proxmox_host = "{{ env.PROXMOX_HOST }}"
-PKR_VAR_proxmox_node = "{{ env.PROXMOX_NODE }}"
+PACKER_LOG = "0"
 
 # OpenTofu / Terraform environment variables
 TF_INPUT = 0
 TF_LOG = "ERROR"
 
 TF_VAR_generated_files = "{{ env.GENERATED_DIR }}"
-TF_VAR_provision_ssh_public_keys = "{{ env.PROVISION_SSH_PUBLIC_KEYS }}"
-TF_VAR_proxmox_api_token_id = { value = "{{ env.PROXMOX_TF_API_TOKEN_ID }}", redact = true}
-TF_VAR_proxmox_api_token_secret = { value = "{{ env.PROXMOX_TF_API_TOKEN_SECRET }}" , redact = true}
-TF_VAR_proxmox_host = "{{ env.PROXMOX_HOST }}"
 
 # Ansible environment variables
 ANSIBLE_REMOTE_USER = "{{ env.PROVISION_USER }}"
@@ -98,13 +92,13 @@ run = """
 set -euo pipefail
 
 NEW_KEY=$(cat {{ env.GENERATED_DIR }}/id_ed25519.pub)
-EXISTING=${PROVISION_SSH_PUBLIC_KEYS:-"[]"}
+EXISTING=${TF_VAR_provision_ssh_public_keys:-"[]"}
 
 if echo "$EXISTING" | jq -e --arg key "$NEW_KEY" 'contains([$key])' > /dev/null; then
-  echo "Public key already in PROVISION_SSH_PUBLIC_KEYS"
+  echo "Public key already in TF_VAR_provision_ssh_public_keys"
 else
-  fnox set PROVISION_SSH_PUBLIC_KEYS "$(echo "$EXISTING" | jq --arg key "$NEW_KEY" '. + [$key]')" --description "Managed by Mise"
-  echo "Added public key to PROVISION_SSH_PUBLIC_KEYS"
+  fnox set TF_VAR_provision_ssh_public_keys "$(echo "$EXISTING" | jq --arg key "$NEW_KEY" '. + [$key]')" --description "Managed by Mise"
+  echo "Added public key to TF_VAR_provision_ssh_public_keys"
 fi
 """
 
@@ -158,6 +152,10 @@ run = "tofu -chdir=infra plan -out tfplan"
 description = "Applies the changes required to reach the desired state of the configuration"
 run = "tofu -chdir=infra apply tfplan"
 
+[tasks."tofu:yolo"]
+description = "Applies the changes required to reach the desired state of the configuration without a plan"
+run = "tofu -chdir=infra apply -auto-approve"
+
 [tasks."tofu:refresh"]
 description = "Updates the state file with the real infrastructure"
 run = "tofu -chdir=infra refresh"
@@ -196,6 +194,10 @@ run = "ansible-galaxy role install -r playbooks/requirements.yaml"
 [tasks."ansible:inventory"]
 description = "Lists the Ansible inventory"
 run = "ansible-inventory --list"
+
+[tasks."ansible:ping"]
+description = "Ping all hosts in the Ansible inventory"
+run = "ansible all -m ping"
 
 [tasks."ansible:run:main"]
 description = "Provision and configure the homelab using Ansible"

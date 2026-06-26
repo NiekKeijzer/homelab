@@ -1,0 +1,93 @@
+variant: flatcar
+version: 1.1.0
+passwd:
+  users:
+    - name: ${provision_username}
+      groups: [ sudo, docker ]
+      ssh_authorized_keys:
+%{ for key in provision_ssh_public_keys ~}
+        - ${key}
+%{ endfor ~}
+storage:
+  filesystems: 
+    - path: /mnt/data
+      device: /dev/sdb
+      format: ext4
+      wipe_filesystem: false
+      with_mount_unit: true
+
+  files:
+    - path: /etc/hostname
+      contents: { inline: "${hostname}" }
+    - path: /etc/systemd/network/00-eth0.network
+      contents:
+        inline: |
+          [Match]
+          Name=eth0
+          [Network]
+          Address=${ipv4_cidr}
+          Gateway=${gateway}
+%{ for option in dns ~}
+          DNS=${option}
+%{ endfor ~}
+    - path: /etc/periphery/docker-compose.yaml
+      mode: 0644
+      contents:
+        inline: |
+          ${indent(10, trimspace(periphery_compose))}
+    - path: /etc/periphery/compose.env
+      mode: 0600
+      contents:
+        inline: |
+          ${indent(10, trimspace(periphery_compose_env))}
+    - path: /etc/sysctl.d/99-console-loglevel.conf
+      contents:
+        inline: |
+          kernel.printk = 4 4 1 7
+    - path: /opt/extensions/docker-compose/docker-compose-2.34.0-x86-64.raw
+      mode: 0644
+      contents:
+        source: https://extensions.flatcar.org/extensions/docker-compose-2.34.0-x86-64.raw
+    - path: /etc/sysupdate.docker-compose.d/docker-compose.conf
+      contents:
+        source: https://extensions.flatcar.org/extensions/docker-compose.conf
+
+  links:
+    - path: /etc/resolv.conf
+      overwrite: true
+      target: /run/systemd/resolve/stub-resolv.conf
+    - target: /opt/extensions/docker-compose/docker-compose-2.34.0-x86-64.raw
+      path: /etc/extensions/docker-compose.raw
+      hard: false
+
+systemd:
+  units:
+    - name: systemd-sysupdate.timer
+      enabled: true
+    - name: systemd-sysupdate.service
+      dropins:
+        - name: docker-compose.conf
+          contents: |
+            [Service]
+            ExecStartPre=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/docker-compose.raw > /tmp/docker-compose"
+            ExecStartPre=/usr/lib/systemd/systemd-sysupdate -C docker-compose update
+            ExecStartPost=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/docker-compose.raw > /tmp/docker-compose-new"
+            ExecStartPost=/usr/bin/sh -c "if ! cmp --silent /tmp/docker-compose /tmp/docker-compose-new; then touch /run/reboot-required; fi"
+    - name: komodo-periphery.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Komodo Periphery
+        After=docker.service network-online.target mnt-data.mount
+        Requires=docker.service mnt-data.mount
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        WorkingDirectory=/etc/periphery
+        ExecStart=/usr/bin/docker compose --env-file /etc/periphery/compose.env up -d --wait
+        ExecStop=/usr/bin/docker compose down
+        TimeoutStartSec=120
+
+        [Install]
+        WantedBy=multi-user.target

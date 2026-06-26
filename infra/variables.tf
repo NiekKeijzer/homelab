@@ -16,8 +16,20 @@ variable "proxmox_api_token_secret" {
   type = string
 }
 
+variable "proxmox_iso_datastore_id" {
+  default = "iso-store"
+}
+
+variable "proxmox_snippets_datastore_id" {
+  default = "snippet-store"
+}
+
 variable "proxmox_node" {
-  default = "pve01"
+  default = "pve-01"
+}
+
+variable "cidr" {
+  default = "192.168.20.0/24"
 }
 
 variable "gateway" {
@@ -25,9 +37,10 @@ variable "gateway" {
   default = "192.168.20.1"
 }
 
-variable "vlan_id" {
-  type = number
-  default = 20
+variable "dns" {
+  type = list(string)
+  default = ["192.168.20.27"]
+  # default = ["192.168.20.53", "192.168.20.54"]
 }
 
 variable "generated_files" {
@@ -46,5 +59,10 @@ variable "provision_user" {
 
 variable "provision_ssh_public_keys" {
   type = list(string)
+  sensitive = true
+}
+
+variable "github_access_token" {
+  type = string
   sensitive = true
 }

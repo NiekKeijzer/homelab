@@ -1,0 +1,69 @@
+services:
+
+  postgres:
+    # 🚨 Pin to a specific version. Updates can be breaking.
+    # https://github.com/FerretDB/documentdb/pkgs/container/postgres-documentdb
+    image: ghcr.io/ferretdb/postgres-documentdb:17-0.107.0-ferretdb-2.7.0
+    labels:
+      komodo.skip: # Prevent Komodo from stopping with StopAllContainers
+    restart: unless-stopped
+    # ports:
+    #   - 5432:5432
+    volumes:
+      - /mnt/data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${KOMODO_DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${KOMODO_DATABASE_PASSWORD}
+      POSTGRES_DB: postgres
+
+  ferretdb:
+    # 🚨 Pin to a specific version. Updates can be breaking.
+    # https://github.com/FerretDB/FerretDB/pkgs/container/ferretdb
+    image: ghcr.io/ferretdb/ferretdb:2.7.0
+    labels:
+      komodo.skip: # Prevent Komodo from stopping with StopAllContainers
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    # ports:
+    #   - 27017:27017
+    volumes:
+      - /mnt/data/ferretdb:/state
+    environment:
+      FERRETDB_POSTGRESQL_URL: postgres://${KOMODO_DATABASE_USERNAME}:${KOMODO_DATABASE_PASSWORD}@postgres:5432/postgres
+
+  core:
+    image: ghcr.io/moghtech/komodo-core:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    init: true
+    restart: unless-stopped
+    depends_on:
+      - ferretdb
+    ports:
+      - 9120:9120
+    env_file: ./compose.env
+    environment:
+      KOMODO_DATABASE_ADDRESS: ferretdb:27017
+    volumes:
+      # Mount rendered core.config.toml
+      - ./config/core.config.toml:/config/config.toml
+      # Mount persistent data directories for keys, backups, and syncs
+      - /mnt/data/keys:/config/keys
+      - /mnt/data/backups:/backups
+      - /mnt/data/syncs:/syncs
+
+  periphery:
+    image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}
+    init: true
+    restart: unless-stopped
+    depends_on:
+      - core
+    env_file: ./compose.env
+    volumes:
+      # Mount external docker socket
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Allow Periphery to see processes outside of container
+      - /proc:/proc
+
+      # Mount Core <-> Periphery communication keys
+      - /mnt/data/keys:/config/keys
+      - /mnt/data/komodo:/mnt/data/komodo

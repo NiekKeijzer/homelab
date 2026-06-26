@@ -9,5 +9,5 @@ ui_write_disabled = false
 [[git_provider]]
 domain = "github.com"
 accounts = [
-  { username = "NiekKeijzer", token = "{{ lookup('env', 'GITHUB_ACCESS_TOKEN') }}" },
+  { username = "NiekKeijzer", token = "${github_access_token}" },
 ]
