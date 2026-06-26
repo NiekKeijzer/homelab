@@ -1,13 +1,17 @@
 locals {
   docker_vm_count = 1
-  vm_template = local.vm_templates["debian-13"]
+
+  tags = [
+    "opentofu",
+    "komodo",
+  ]
 
   core = {
     hostname = "komodo-01"
   }
 
   periphery = {
-    hostname_prefix = "periphery-"
+    hostname_prefix = "periphery"
     vm_count       = 1
   }
 }
@@ -84,6 +88,8 @@ resource "proxmox_virtual_environment_file" "ignition" {
 # https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm#example-attached-disks
 resource "proxmox_virtual_environment_vm" "core_data" {
   name      = "${local.core.hostname}-data"
+  description = "Managed by OpenTofu"
+  tags        = distinct(concat(local.tags, ["data"]))
   node_name = var.proxmox_node
 
   started = false
@@ -102,6 +108,9 @@ resource "proxmox_virtual_environment_vm" "core_data" {
 
 resource "proxmox_virtual_environment_vm" "core" {
   name      = local.core.hostname
+  description = "Managed by OpenTofu"
+  tags        = distinct(concat(local.tags, ["komodo-core"]))
+
   node_name = var.proxmox_node
   agent { enabled = false } 
 
@@ -180,6 +189,8 @@ resource "proxmox_virtual_environment_vm" "periphery_data" {
   count = local.periphery.vm_count
 
   name      = format("%s-%02d-data", local.periphery.hostname_prefix, count.index + 1)
+  description = "Managed by OpenTofu"
+  tags        = distinct(concat(local.tags, ["data"]))
   node_name = var.proxmox_node
 
   started = false
@@ -200,6 +211,8 @@ resource "proxmox_virtual_environment_vm" "periphery" {
   count = local.periphery.vm_count
 
   name      = format("%s-%02d", local.periphery.hostname_prefix, count.index + 1)
+  description = "Managed by OpenTofu"
+  tags        = distinct(concat(local.tags, ["komodo-periphery"]))
   node_name = var.proxmox_node
   agent { enabled = false } 
 
