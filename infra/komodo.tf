@@ -140,7 +140,8 @@ module "periphery" {
 
 output "komodo_sync_instructions" {
   value = <<-EOT
-  Everything is set up, but a "seed" resource sync is required to fully implement GitOps. 
+  If this was the first time you deployed the Komodo stack, you will need to perform a "seed" resource sync to fully implement GitOps. Follow these steps:
+
   1. Login to the Komodo Core server at https://${cidrhost(local.core.network.cidr, 0)}:9120 
   2. Navigate to the "Syncs" section in the Komodo UI.
   3. Create a new sync with the following configuration and execute it 

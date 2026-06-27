@@ -67,3 +67,6 @@ services:
       # Mount Core <-> Periphery communication keys
       - /mnt/data/keys:/config/keys
       - /mnt/data/komodo:/mnt/data/komodo
+
+      # Mount /mnt/data read only to allow monitoring of data disk
+      - /mnt/data:/mnt/data:ro
