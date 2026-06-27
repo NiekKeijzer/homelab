@@ -30,12 +30,12 @@ storage:
 %{ for option in dns ~}
           DNS=${option}
 %{ endfor ~}
-    - path: /etc/periphery/docker-compose.yaml
+    - path: /etc/komodo/docker-compose.yaml
       mode: 0644
       contents:
         inline: |
           ${indent(10, trimspace(periphery_compose))}
-    - path: /etc/periphery/compose.env
+    - path: /etc/komodo/compose.env
       mode: 0600
       contents:
         inline: |
@@ -84,8 +84,8 @@ systemd:
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        WorkingDirectory=/etc/periphery
-        ExecStart=/usr/bin/docker compose --env-file /etc/periphery/compose.env up -d --wait
+        WorkingDirectory=/etc/komodo
+        ExecStart=/usr/bin/docker compose --env-file /etc/komodo/compose.env up -d --wait
         ExecStop=/usr/bin/docker compose down
         TimeoutStartSec=120
 
