@@ -49,7 +49,8 @@ services:
       # Mount persistent data directories for keys, backups, and syncs
       - /mnt/data/keys:/config/keys
       - /mnt/data/backups:/backups
-      - /mnt/data/syncs:/syncs
+      # - /mnt/data/syncs:/syncs
+      - /etc/komodo/syncs/seed:/syncs/seed:ro
 
   periphery:
     image: ghcr.io/moghtech/komodo-periphery:${COMPOSE_KOMODO_IMAGE_TAG:-2}

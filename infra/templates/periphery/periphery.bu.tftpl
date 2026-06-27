@@ -11,7 +11,10 @@ passwd:
 storage:
   filesystems: 
     - path: /mnt/data
-      device: /dev/sdb
+      # sdX names not consisten accross reboots and serial labels are not passed to the VM
+      # so we look for the scsi id instead which _should be_ consistent, but might still 
+      # change when the order of the disks changes in OpenTofu configuration
+      device: /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1
       format: ext4
       wipe_filesystem: false
       with_mount_unit: true

@@ -66,6 +66,7 @@ resource "proxmox_virtual_environment_vm" "this" {
       size              = data_disk.value["size"]
       # assign from scsi1 and up
       interface         = "scsi${data_disk.key + 1}"
+      serial            = "data"
     }
   }
 
